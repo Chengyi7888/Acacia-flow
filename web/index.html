@@ -1,0 +1,2601 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Acacia Flow</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b10;
+      --surface: rgba(24, 29, 43, 0.72);
+      --surface-strong: rgba(30, 36, 53, 0.9);
+      --line: rgba(195, 204, 238, 0.16);
+      --line-strong: rgba(199, 210, 255, 0.28);
+      --text: #f0f3fb;
+      --muted: #aab2c8;
+      --dim: #707990;
+      --lavender: #aaa1ff;
+      --violet: #7f73e8;
+      --lime: #d8ff69;
+      --lime-2: #9cff72;
+      --cyan: #72e8ff;
+      --danger: #ff6d8a;
+      --ok: #d8ff69;
+      --shadow: rgba(0, 0, 0, 0.44);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(145deg, #090d14 0%, #111521 45%, #080a0f 100%);
+    }
+
+    button, select, input {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app-shell {
+      height: calc(100vh - 34px);
+      margin: 17px;
+      overflow: hidden;
+      border: 1px solid rgba(208, 219, 255, 0.18);
+      border-radius: 18px;
+      background: rgba(12, 15, 23, 0.96);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+      position: relative;
+    }
+
+    .app-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: transparent;
+    }
+
+    .titlebar {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px 0 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(16, 20, 31, 0.72);
+      -webkit-app-region: drag;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+
+    .brand-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid rgba(216, 255, 105, 0.35);
+      box-shadow: 0 0 24px rgba(216, 255, 105, 0.18);
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      line-height: 1;
+      margin: 0 0 5px;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .window-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 30px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      transition: 160ms ease;
+    }
+
+    .icon-btn:hover {
+      color: var(--text);
+      background: rgba(170, 161, 255, 0.15);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr) 300px;
+      height: calc(100% - 70px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .main::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 170px;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(7, 10, 16, 0.08), rgba(7, 10, 16, 0.2)),
+        url("../assets/acacia_workspace_bg.png") center / cover no-repeat;
+      opacity: 0.96;
+      z-index: 0;
+    }
+
+    body.wallpaper-off .main::before {
+      background:
+        radial-gradient(circle at 70% 18%, rgba(170, 161, 255, 0.07), transparent 28%),
+        linear-gradient(145deg, #07090d 0%, #0b0e15 48%, #050609 100%);
+      opacity: 1;
+    }
+
+    .sidebar {
+      position: relative;
+      z-index: 1;
+      padding: 22px 12px;
+      border-right: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(210, 216, 230, 0.25), rgba(130, 140, 164, 0.2)),
+        rgba(42, 48, 61, 0.68);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 46px;
+      padding: 0 13px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      color: var(--muted);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .nav-item:hover {
+      color: var(--text);
+      background: rgba(170, 161, 255, 0.1);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      color: var(--text);
+      background: linear-gradient(90deg, rgba(170, 161, 255, 0.28), rgba(216, 255, 105, 0.1));
+      border-color: rgba(170, 161, 255, 0.34);
+      box-shadow: inset 3px 0 0 var(--lavender);
+    }
+
+    .nav-icon {
+      width: 22px;
+      text-align: center;
+      color: var(--lavender);
+    }
+
+    .workspace {
+      position: relative;
+      z-index: 1;
+      padding: 26px 28px 132px;
+      overflow: hidden auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(199, 210, 255, 0.42) transparent;
+    }
+
+    .workspace::-webkit-scrollbar,
+    .queue-panel::-webkit-scrollbar {
+      width: 2px;
+      height: 2px;
+    }
+
+    .workspace:active::-webkit-scrollbar,
+    .queue-panel:active::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+
+    .workspace::-webkit-scrollbar-track,
+    .queue-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .workspace::-webkit-scrollbar-thumb,
+    .queue-panel::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(199, 210, 255, 0.36);
+    }
+
+    .workspace:hover::-webkit-scrollbar-thumb,
+    .queue-panel:hover::-webkit-scrollbar-thumb {
+      background: rgba(199, 210, 255, 0.46);
+    }
+
+    .hero {
+      position: relative;
+      display: block;
+      padding-left: 260px;
+      min-height: 330px;
+      margin-bottom: 18px;
+      max-width: min(980px, calc(100% - 28px));
+      margin: 0 auto 18px;
+    }
+
+    .mascot-stage {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 260px;
+      min-height: 330px;
+      overflow: hidden;
+      border-radius: 18px;
+      background: transparent;
+      border: 0;
+    }
+
+    .mascot-placeholder {
+      position: absolute;
+      inset: 28px 20px 20px;
+      border: 0;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+    }
+
+    .chat-bubble {
+      display: none;
+    }
+
+    .hero-work {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .hero-title {
+      width: 87.5%;
+      margin: 16px 0 18px 12.5%;
+    }
+
+    .hero-title h2 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    .hero-title h2 span {
+      color: var(--lime);
+    }
+
+    .hero-title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .drop-zone {
+      width: min(87.5%, 100%);
+      min-height: 176px;
+      aspect-ratio: 1.84 / 1;
+      margin: 0 0 0 12.5%;
+      border-radius: 18px;
+      border: 1px dashed rgba(207, 216, 255, 0.28);
+      background:
+        radial-gradient(circle at 75% 30%, rgba(170, 161, 255, 0.12), transparent 34%),
+        rgba(21, 26, 39, 0.52);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: 160ms ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: rgba(216, 255, 105, 0.8);
+      box-shadow: 0 0 36px rgba(216, 255, 105, 0.12);
+    }
+
+    .drop-inner {
+      position: relative;
+      z-index: 1;
+      transform: scale(0.875);
+      transform-origin: center;
+      width: 114.2857142857%;
+    }
+
+    .folder-icon {
+      width: 58px;
+      height: 44px;
+      margin: 0 auto 12px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #9e99f5, #d8d4ff);
+      position: relative;
+      box-shadow: 0 16px 38px rgba(132, 121, 238, 0.3);
+    }
+
+    .folder-icon::before {
+      content: "";
+      position: absolute;
+      width: 27px;
+      height: 11px;
+      left: 8px;
+      top: -7px;
+      border-radius: 8px 8px 0 0;
+      background: #c8c3ff;
+    }
+
+    .folder-icon::after {
+      content: "+";
+      position: absolute;
+      right: -9px;
+      bottom: -9px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #10131a;
+      font-weight: 700;
+      background: var(--text);
+      border: 3px solid rgba(18, 22, 34, 0.94);
+      font-size: 15px;
+    }
+
+    .drop-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .drop-note {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 11px;
+    }
+
+    .format-label {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto 8px;
+      color: #c5cae3;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      position: relative;
+      white-space: nowrap;
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      min-width: 40px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #d4daea;
+      font-size: 10px;
+    }
+
+.chip-button {
+      transition: 140ms ease;
+    }
+
+.chip-button:hover,
+.chip-button.active {
+      background: rgba(170, 161, 255, 0.16);
+      border-color: rgba(170, 161, 255, 0.35);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+
+.chip-button.is-preview-only {
+      cursor: default;
+      opacity: 0.78;
+    }
+
+.chip-button.is-preview-only:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.08);
+      color: #d4daea;
+      transform: none;
+    }
+
+.chip-panel {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%) scale(0.98);
+      min-width: min(320px, 100%);
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(199, 210, 255, 0.18);
+      background: rgba(14, 17, 26, 0.96);
+      box-shadow: 0 22px 48px rgba(0, 0, 0, 0.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: 160ms ease;
+      z-index: 5;
+    }
+
+.chip-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) scale(1);
+    }
+
+.chip-panel-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+.chip-panel-note {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .primary {
+      min-width: 170px;
+      height: 46px;
+      border-radius: 18px;
+      color: #0e1219;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--lime), var(--lime-2));
+      box-shadow: 0 14px 38px rgba(216, 255, 105, 0.26);
+    }
+
+    #convertBtn {
+      min-width: 0;
+      width: auto;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .button-logo {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+
+    .select-primary {
+      color: #f7f5ff;
+      background: linear-gradient(135deg, #8f83ff, #b7a7ff);
+      box-shadow: 0 14px 38px rgba(170, 161, 255, 0.3);
+    }
+
+    #selectBtn {
+      min-width: 144px;
+      height: 38px;
+      border-radius: 14px;
+      font-size: 14px;
+      box-shadow: 0 10px 26px rgba(170, 161, 255, 0.24);
+    }
+
+    .primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .settings {
+      position: relative;
+      z-index: 4;
+      overflow: visible;
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: rgba(24, 29, 43, 0.52);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+      margin: clamp(58px, 7.5vh, 108px) auto 18px;
+      max-width: min(980px, calc(100% - 28px));
+    }
+
+    body[data-tool="other"] #dropZone,
+    body[data-tool="other"] #conversionSettings {
+      display: none;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr minmax(220px, 1.55fr) auto;
+      gap: clamp(12px, 1.1vw, 24px);
+      align-items: end;
+    }
+
+    .settings-spacer {
+      grid-column: 1 / 4;
+    }
+
+    .format-field,
+    .quality-field,
+    .output-field {
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    select, input {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(8, 11, 17, 0.58);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    select.native-select {
+      display: none;
+    }
+
+    .custom-select {
+      position: relative;
+      width: 100%;
+      z-index: 3;
+    }
+
+    .custom-select.open {
+      z-index: 6;
+    }
+
+    .custom-select-trigger {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(8, 11, 17, 0.7);
+      color: var(--text);
+      padding: 0 38px 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      text-align: left;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .custom-select-trigger::after {
+      content: "⌄";
+      position: absolute;
+      right: 13px;
+      top: 9px;
+      color: #d5d2ff;
+      font-size: 18px;
+      transition: transform 160ms ease;
+    }
+
+    .custom-select.open .custom-select-trigger {
+      border-color: rgba(170, 161, 255, 0.5);
+      box-shadow: 0 0 0 3px rgba(170, 161, 255, 0.11);
+    }
+
+    .custom-select.open .custom-select-trigger::after {
+      transform: rotate(180deg);
+    }
+
+    .custom-options {
+      position: fixed;
+      max-height: 264px;
+      overflow: hidden auto;
+      border-radius: 14px;
+      padding: 7px;
+      border: 1px solid rgba(170, 161, 255, 0.25);
+      background:
+        linear-gradient(180deg, rgba(42, 48, 66, 0.98), rgba(23, 27, 39, 0.98));
+      box-shadow: 0 24px 58px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-4px) scale(0.985);
+      transform-origin: top;
+      transition: opacity 140ms ease, transform 140ms ease;
+      z-index: 90;
+    }
+
+    .custom-options.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .custom-option {
+      width: 100%;
+      height: 36px;
+      border-radius: 10px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      background: transparent;
+      color: #e9ecf8;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    .custom-option:hover,
+    .custom-option.selected {
+      color: #10131a;
+      background: linear-gradient(135deg, #b5adff, #d8ff69);
+    }
+
+    input::placeholder {
+      color: var(--dim);
+      opacity: 1;
+    }
+
+    input:focus {
+      border-color: rgba(216, 255, 105, 0.42);
+      box-shadow: 0 0 0 3px rgba(216, 255, 105, 0.08);
+    }
+
+    .path-input {
+      position: relative;
+    }
+
+    .path-input input {
+      padding-right: 44px;
+    }
+
+    .path-icon-btn {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      color: var(--lavender);
+      background: rgba(170, 161, 255, 0.1);
+      border: 1px solid rgba(170, 161, 255, 0.18);
+      transition: 160ms ease;
+    }
+
+    .path-icon-btn:hover {
+      color: var(--text);
+      background: rgba(170, 161, 255, 0.2);
+    }
+
+    .secondary {
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      color: var(--text);
+      background: rgba(170, 161, 255, 0.12);
+      border: 1px solid rgba(170, 161, 255, 0.24);
+      white-space: nowrap;
+    }
+
+    .assistant-card {
+      position: fixed;
+      left: 64px;
+      right: auto;
+      bottom: 34px;
+      width: min(1180px, calc(100vw - 384px));
+      z-index: 10;
+      overflow: visible;
+      border-radius: 18px;
+      min-height: 96px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, rgba(18, 22, 34, 0.76), rgba(23, 30, 45, 0.52)),
+        rgba(24, 29, 43, 0.48);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px 14px 226px;
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.36), 0 0 0 1px rgba(216, 255, 105, 0.05);
+      backdrop-filter: blur(16px);
+    }
+
+    .assistant-figure {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 218px;
+      height: 192px;
+      border: 0;
+      background: transparent;
+      pointer-events: auto;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+    }
+
+    .assistant-figure img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      object-position: left bottom;
+      filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.28));
+      transition: opacity 160ms ease, transform 180ms ease;
+    }
+
+    .assistant-figure img.is-changing {
+      opacity: 0.25;
+      transform: translateY(3px) scale(0.985);
+    }
+
+    .assistant-copy strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 15px;
+    }
+
+    .assistant-copy {
+      min-width: 0;
+    }
+
+    .assistant-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tips {
+      display: flex;
+      justify-content: flex-end;
+      gap: clamp(12px, 1.5vw, 34px);
+      color: #cfd6e8;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+
+    .tip {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .queue-panel {
+      position: relative;
+      z-index: 1;
+      border-left: 1px solid var(--line);
+      background: transparent;
+      padding: 22px 18px;
+      overflow: hidden auto;
+    }
+
+    .queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(170, 161, 255, 0.2);
+      background: rgba(30, 35, 53, 0.34);
+      backdrop-filter: blur(14px);
+    }
+
+    .queue-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .clear-link {
+      color: var(--muted);
+      background: transparent;
+      font-size: 12px;
+    }
+
+    .queue-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .queue-card {
+      border-radius: 15px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      background: rgba(26, 31, 46, 0.46);
+      backdrop-filter: blur(12px);
+    }
+
+    .queue-card.menu-open {
+      outline: 1px solid rgba(255, 109, 138, 0.35);
+      box-shadow: 0 0 0 1px rgba(255, 109, 138, 0.12), 0 18px 40px rgba(0, 0, 0, 0.22);
+    }
+
+    .queue-delete-menu {
+      position: fixed;
+      min-width: 136px;
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(20, 24, 35, 0.86);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
+      z-index: 80;
+      display: none;
+    }
+
+    .queue-delete-menu.open {
+      display: block;
+    }
+
+    .queue-delete-menu button {
+      width: 100%;
+      height: 36px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, rgba(255, 109, 138, 0.96), rgba(194, 63, 92, 0.96));
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    .queue-delete-menu button:hover {
+      filter: brightness(1.04);
+    }
+
+    .queue-main {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 11px;
+      align-items: center;
+    }
+
+    .file-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #0e1219;
+      font-weight: 800;
+      background: linear-gradient(135deg, #9ea4ff, #dcd9ff);
+      font-size: 11px;
+    }
+
+    .queue-name {
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .queue-status {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-ok { color: var(--ok); }
+    .status-bad { color: var(--danger); }
+
+    .progress-track {
+      height: 5px;
+      border-radius: 999px;
+      margin-top: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--lavender), var(--lime));
+      transition: 220ms ease;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .advanced-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .advanced-select {
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(8, 11, 17, 0.7);
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+    }
+
+    .advanced-note {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .settings-modal {
+      width: min(560px, 100%);
+      max-height: calc(100vh - 48px);
+      border-radius: 18px;
+      border: 1px solid var(--line-strong);
+      background:
+        radial-gradient(circle at 82% 12%, rgba(216, 255, 105, 0.1), transparent 30%),
+        linear-gradient(145deg, rgba(27, 32, 48, 0.98), rgba(10, 13, 20, 0.98));
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(10px) scale(0.98);
+      opacity: 0;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+
+    .modal-backdrop.open .settings-modal {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .modal-backdrop.closing {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-backdrop.closing .settings-modal {
+      transform: translateY(10px) scale(0.98);
+      opacity: 0;
+    }
+
+    .modal-head {
+      height: 64px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-head .icon-btn {
+      position: relative;
+      z-index: 2;
+      pointer-events: auto;
+      -webkit-app-region: no-drag;
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .modal-body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      overflow: hidden auto;
+      min-height: 0;
+    }
+
+    .setting-row {
+      min-height: 58px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.035);
+      padding: 13px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .setting-row strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .setting-row p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .switch {
+      width: 54px;
+      height: 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px;
+      flex: 0 0 auto;
+      cursor: pointer;
+      transition: background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .switch::before {
+      content: "";
+      display: block;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: 160ms ease;
+    }
+
+    .switch.active {
+      background: linear-gradient(135deg, rgba(216, 255, 105, 0.95), rgba(156, 255, 114, 0.95));
+      box-shadow: 0 0 24px rgba(216, 255, 105, 0.18);
+    }
+
+    .switch.active::before {
+      transform: translateX(24px);
+      background: #10131a;
+    }
+
+    .path-setting {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .settings-toggles {
+      display: grid;
+      gap: 12px;
+    }
+
+    .setting-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .setting-check input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--lime);
+    }
+
+    .modal-actions {
+      padding: 0 18px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .settings-shell {
+      display: grid;
+      gap: 14px;
+    }
+
+    .setting-note {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    body.reduced-motion *,
+    body.reduced-motion *::before,
+    body.reduced-motion *::after {
+      transition-duration: 1ms !important;
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
+
+    .settings-actions-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    @media (max-width: 1280px) {
+      .main { grid-template-columns: 150px minmax(0, 1fr) 154px; }
+      .main::before { left: 150px; }
+      .queue-panel {
+        display: block;
+        padding: 18px 6px;
+      }
+      .workspace { padding: 22px 18px 132px; }
+      .assistant-card {
+        left: 52px;
+        right: auto;
+        width: calc(100vw - 284px);
+        padding-left: 190px;
+      }
+      .assistant-figure {
+        width: 184px;
+        height: 172px;
+      }
+      .hero {
+        padding-left: 150px;
+        max-width: 100%;
+      }
+      .hero-work {
+        width: 100%;
+      }
+      .hero-title {
+        width: 87.5%;
+        margin-left: 12.5%;
+      }
+      .drop-zone {
+        width: min(87.5%, 100%);
+        min-height: 0;
+        aspect-ratio: 1.84 / 1;
+        padding: 20px;
+        margin-left: 12.5%;
+      }
+      .drop-inner {
+        width: 114.2857142857%;
+      }
+      .settings {
+        margin: 18px 0 18px auto;
+        max-width: 100%;
+      }
+      .settings-grid {
+        grid-template-columns: minmax(118px, 0.65fr) minmax(118px, 0.65fr) minmax(260px, 1.7fr);
+        gap: 12px 14px;
+      }
+      .format-field { grid-column: 1; }
+      .quality-field { grid-column: 2; }
+      .output-field { grid-column: 3; }
+      #advancedBtn {
+        grid-column: 1;
+        justify-self: stretch;
+      }
+      #convertBtn {
+        grid-column: 2 / 4;
+        justify-self: end;
+        width: auto;
+      }
+      .settings-spacer { display: none; }
+      .path-input { grid-column: auto; }
+      .queue-header {
+        padding: 10px 7px;
+        gap: 5px;
+      }
+      .queue-header h3 {
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .clear-link { font-size: 10px; }
+      .queue-card {
+        padding: 9px;
+      }
+      .queue-main {
+        grid-template-columns: 30px 1fr;
+        gap: 7px;
+      }
+      .file-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 10px;
+      }
+      .queue-name { font-size: 11px; }
+      .queue-meta,
+      .queue-status { font-size: 11px; }
+    }
+
+    @media (min-width: 1281px) {
+      .chip { display: inline-flex; }
+    }
+
+    @media (max-width: 920px) {
+      .main { grid-template-columns: 150px minmax(0, 1fr); }
+      .queue-panel { display: none; }
+      .assistant-card {
+        left: 52px;
+        width: calc(100vw - 86px);
+        padding-left: 186px;
+      }
+      .assistant-figure {
+        width: 180px;
+        height: 168px;
+      }
+      .hero {
+        padding-left: 150px;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="titlebar">
+      <div class="brand">
+        <img class="brand-avatar" src="../assets/acacia_flow.png" alt="">
+        <div>
+          <h1>Acacia Flow</h1>
+          <p>File Format Converter</p>
+        </div>
+      </div>
+      <div class="window-actions">
+        <button class="icon-btn" id="settingsBtn" title="设置">⚙</button>
+        <button class="icon-btn" data-window="minimize" title="最小化">─</button>
+        <button class="icon-btn" data-window="maximize" title="最大化">□</button>
+        <button class="icon-btn" data-window="close" title="关闭">×</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <nav class="sidebar">
+        <div class="nav-item active" data-category="all"><span class="nav-icon">⌂</span><span>首页</span></div>
+        <div class="nav-item" data-category="image"><span class="nav-icon">▧</span><span>图片转换</span></div>
+        <div class="nav-item" data-category="video"><span class="nav-icon">▷</span><span>视频转换</span></div>
+        <div class="nav-item" data-category="audio"><span class="nav-icon">♪</span><span>音频转换</span></div>
+        <div class="nav-item" data-category="pdf"><span class="nav-icon">◰</span><span>PDF 转换</span></div>
+        <div class="nav-item" data-category="document"><span class="nav-icon">▤</span><span>文档转换</span></div>
+        <div class="nav-item" data-category="other"><span class="nav-icon">✣</span><span>其他工具</span></div>
+      </nav>
+
+      <section class="workspace">
+        <div class="hero">
+          <div class="mascot-stage">
+            <div class="mascot-placeholder"></div>
+          </div>
+
+          <div class="hero-work">
+            <div class="hero-title">
+              <h2>Hi~ 我是 <span>Acacia</span></h2>
+              <p>告诉我你想转换什么格式吧！</p>
+            </div>
+
+            <div id="dropZone" class="drop-zone">
+              <div class="drop-inner">
+                <div class="folder-icon"></div>
+                <div class="drop-title">拖拽文件到这里</div>
+                <div class="drop-note">或者点击下方按钮选择文件</div>
+                <div class="format-label">支持多种格式</div>
+                <div class="chips" id="formatChips">
+                  <div id="chipPanel" class="chip-panel" aria-hidden="true">
+                    <p class="chip-panel-note">全部短标签预览</p>
+                    <div class="chip-panel-grid" id="chipPanelGrid"></div>
+                  </div>
+                </div>
+                <button class="primary select-primary" id="selectBtn">选择文件</button>
+                <input class="file-input" id="fileInput" type="file" multiple />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section id="conversionSettings" class="settings">
+          <div class="section-head">
+            <h3>转换设置</h3>
+          </div>
+          <div class="settings-grid">
+            <div class="format-field">
+              <label>输出格式</label>
+              <select id="targetFormat"></select>
+            </div>
+            <div class="quality-field">
+              <label>质量</label>
+              <select id="qualityMode">
+                <option>高质量</option>
+                <option>标准</option>
+                <option>体积优先</option>
+              </select>
+            </div>
+            <div class="output-field">
+              <label>输出路径</label>
+              <div class="path-input">
+                <input id="outputHint" placeholder="请输入或选择输出文件夹路径" />
+                <button id="outputBtn" class="path-icon-btn" type="button" title="选择路径">⌕</button>
+              </div>
+            </div>
+            <button id="advancedBtn" class="secondary">高级设置</button>
+            <div class="settings-spacer"></div>
+            <button id="convertBtn" class="primary"><img class="button-logo" src="../assets/black-flash-logo.png" alt="">开始转换</button>
+          </div>
+        </section>
+
+        <section class="assistant-card">
+          <div class="assistant-figure" aria-hidden="true">
+            <img id="assistantMood" src="../assets/assistant-states/idle.png" alt="">
+          </div>
+          <div class="assistant-copy">
+            <strong>Acacia 小助手</strong>
+            <p id="assistantText">...在哪呢...还会回来吗？</p>
+          </div>
+          <div class="tips">
+            <span class="tip">✦ 快速转换</span>
+            <span class="tip">✦ 高质量输出</span>
+            <span class="tip">✦ 安全可靠</span>
+          </div>
+        </section>
+      </section>
+
+      <aside class="queue-panel">
+        <div class="queue-header">
+          <h3 id="queueTitle">转换队列（0）</h3>
+          <button id="queueClearBtn" class="clear-link">清空</button>
+        </div>
+        <div id="queueBody" class="queue-list"></div>
+      </aside>
+    </main>
+
+    <div id="queueDeleteMenu" class="queue-delete-menu" role="menu" aria-hidden="true">
+      <button id="queueDeleteBtn" type="button">删除项目</button>
+    </div>
+
+    <div id="settingsModal" class="modal-backdrop" aria-hidden="true">
+      <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="modal-head">
+          <h3 id="settingsTitle">设置</h3>
+          <button class="icon-btn" id="settingsCloseBtn" type="button" aria-label="关闭设置" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-row">
+            <div>
+              <strong>开机自动启动</strong>
+              <p>开启后，Acacia Flow 会随系统启动。</p>
+            </div>
+            <button id="autoLaunchToggle" class="switch" type="button" aria-label="开机自动启动"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>关闭后最小化到托盘</strong>
+              <p>关闭窗口时保留后台托盘；关闭此项则直接退出程序。</p>
+            </div>
+            <button id="closeBehaviorToggle" class="switch" type="button" aria-label="关闭后最小化到托盘"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>转换前确认</strong>
+              <p>开始批量转换前先弹出确认，避免误操作。</p>
+            </div>
+            <button id="confirmBeforeToggle" class="switch" type="button" aria-label="转换前确认"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>显示详细错误</strong>
+              <p>失败时在队列中显示具体错误原因，便于排查格式问题。</p>
+            </div>
+            <button id="detailsErrorToggle" class="switch" type="button" aria-label="显示详细错误"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>记住上次工具</strong>
+              <p>保留这个选项，后续会用于恢复最近使用的左侧工具分类。</p>
+            </div>
+            <button id="rememberToolToggle" class="switch" type="button" aria-label="记住上次工具"></button>
+          </div>
+          <div>
+            <label>默认存储地址</label>
+            <div class="path-setting">
+              <input id="defaultOutputInput" placeholder="为空时主页也不预填路径" />
+              <button id="defaultOutputBtn" class="secondary" type="button">选择地址</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="resetSettingsBtn" class="secondary" type="button">恢复默认</button>
+          <button id="saveSettingsBtn" class="primary" type="button">保存设置</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="advancedModal" class="modal-backdrop" aria-hidden="true">
+      <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="advancedTitle">
+        <div class="modal-head">
+          <h3 id="advancedTitle">高级设置</h3>
+          <button class="icon-btn" id="advancedCloseBtn" type="button" aria-label="关闭高级设置" title="关闭">×</button>
+        </div>
+        <div class="modal-body advanced-grid">
+          <div>
+            <label>同名文件处理</label>
+            <select id="conflictMode">
+              <option value="rename">自动重命名</option>
+              <option value="overwrite">覆盖原文件</option>
+              <option value="skip">跳过已存在</option>
+            </select>
+            <p class="advanced-note">默认自动重命名，避免把已有文件直接覆盖。</p>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>完成后打开输出文件夹</strong>
+              <p>全部转换完成后自动打开保存位置。</p>
+            </div>
+            <button id="openFolderToggle" class="switch" type="button" aria-label="完成后打开输出文件夹"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>完成后打开输出文件</strong>
+              <p>每个文件转换成功后自动用系统默认程序打开。</p>
+            </div>
+            <button id="openFileToggle" class="switch" type="button" aria-label="完成后打开输出文件"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <strong>成功后清理完成项</strong>
+              <p>转换完成后自动移除已完成项目，失败项保留在队列中。</p>
+            </div>
+            <button id="clearCompletedToggle" class="switch" type="button" aria-label="成功后清理完成项"></button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="saveAdvancedBtn" class="primary" type="button">保存高级设置</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="./vendor/mammoth.browser.min.js"></script>
+  <script src="./vendor/jszip.min.js"></script>
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./vendor/docx.umd.js"></script>
+  <script src="./vendor/jspdf.umd.min.js"></script>
+  <script type="module">
+    import * as pdfjsLib from "./vendor/pdf.min.mjs";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.min.mjs";
+    window.pdfjsLib = pdfjsLib;
+  </script>
+  <script>
+    const toolProfiles = {
+      all: {
+        title: "Hi~ 我是 <span>Acacia</span>",
+        note: "告诉我你想转换什么格式吧！",
+        accept: "",
+        tags: ["jpg", "png", "pdf", "mp4", "mp3", "txt", "docx", "xlsx", "webp", "gif", "mov", "mkv", "wav"],
+        targets: ["pdf", "txt", "docx", "xlsx", "jpg", "png", "mp4", "mp3", "md", "html", "csv", "rtf", "doc", "xls", "webp", "gif", "avif", "tiff", "bmp", "mov", "mkv", "webm", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"]
+      },
+      image: {
+        title: "图片 <span>转换</span>",
+        note: "把常见图片转换成你需要的格式",
+        accept: ".jpg,.jpeg,.png,.webp,.gif,.avif,.tif,.tiff,.bmp",
+        tags: ["png", "jpg", "webp", "gif", "avif", "tiff", "bmp", "pdf"],
+        targets: ["png", "jpg", "webp", "gif", "avif", "tiff", "bmp", "pdf"]
+      },
+      video: {
+        title: "视频 <span>转换</span>",
+        note: "使用本地 FFmpeg 转换视频，也可以导出 GIF",
+        accept: ".mp4,.mov,.mkv,.webm,.avi,.m4v,.wmv,.flv",
+        tags: ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a"],
+        targets: ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a"]
+      },
+      audio: {
+        title: "音频 <span>转换</span>",
+        note: "使用本地 FFmpeg 转换普通音频格式",
+        accept: ".mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.wma",
+        tags: ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"],
+        targets: ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"]
+      },
+      pdf: {
+        title: "PDF <span>转换</span>",
+        note: "把文档、文本、表格、图片生成 PDF，也可提取 PDF 文本",
+        accept: ".pdf,.txt,.md,.html,.csv,.tsv,.rtf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp,.jpg,.jpeg,.png,.webp,.gif,.avif,.tif,.tiff,.bmp",
+        tags: ["pdf", "txt", "md", "html", "docx"],
+        targets: ["pdf", "txt", "md", "html", "docx"]
+      },
+      document: {
+        title: "文档 <span>转换</span>",
+        note: "支持 Word、PowerPoint 和常见文本文档",
+        accept: ".doc,.docx,.ppt,.pptx,.odt,.odp,.txt,.md,.html,.csv,.tsv,.rtf,.pdf",
+        tags: ["docx", "doc", "pdf", "txt", "md", "html", "csv", "rtf"],
+        targets: ["docx", "doc", "pdf", "txt", "md", "html", "csv", "rtf"]
+      },
+      other: {
+        title: "其他 <span>工具</span>",
+        note: "表格、文本和跨格式转换都可以从这里开始",
+        accept: ".txt,.md,.html,.csv,.tsv,.rtf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp,.pdf,.jpg,.jpeg,.png,.webp,.gif,.avif,.tif,.tiff,.bmp,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.wma,.mp4,.mov,.mkv,.webm,.avi,.m4v,.wmv,.flv",
+        tags: [],
+        targets: ["pdf", "txt", "md", "html", "csv", "rtf", "docx", "doc", "xlsx", "xls", "jpg", "png", "mp4", "mp3"]
+      }
+    };
+    const supported = [...new Set(Object.values(toolProfiles).flatMap(profile => profile.targets))];
+    const targetFormat = document.getElementById("targetFormat");
+    const qualityMode = document.getElementById("qualityMode");
+    const fileInput = document.getElementById("fileInput");
+    const selectBtn = document.getElementById("selectBtn");
+    const dropZone = document.getElementById("dropZone");
+    const queueBody = document.getElementById("queueBody");
+    const queueTitle = document.getElementById("queueTitle");
+    const convertBtn = document.getElementById("convertBtn");
+    const queueClearBtn = document.getElementById("queueClearBtn");
+    const queueDeleteMenu = document.getElementById("queueDeleteMenu");
+    const queueDeleteBtn = document.getElementById("queueDeleteBtn");
+    const outputBtn = document.getElementById("outputBtn");
+    const outputHint = document.getElementById("outputHint");
+    const assistantText = document.getElementById("assistantText");
+    const assistantMood = document.getElementById("assistantMood");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsModal = document.getElementById("settingsModal");
+    const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+    const advancedBtn = document.getElementById("advancedBtn");
+    const advancedModal = document.getElementById("advancedModal");
+    const advancedCloseBtn = document.getElementById("advancedCloseBtn");
+    const conflictMode = document.getElementById("conflictMode");
+    const openFolderToggle = document.getElementById("openFolderToggle");
+    const clearCompletedToggle = document.getElementById("clearCompletedToggle");
+    const saveAdvancedBtn = document.getElementById("saveAdvancedBtn");
+    const autoLaunchToggle = document.getElementById("autoLaunchToggle");
+    const closeBehaviorToggle = document.getElementById("closeBehaviorToggle");
+    const defaultOutputInput = document.getElementById("defaultOutputInput");
+    const defaultOutputBtn = document.getElementById("defaultOutputBtn");
+    const resetSettingsBtn = document.getElementById("resetSettingsBtn");
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    const queue = [];
+    let activeCategory = "all";
+    const assistantMoods = {
+      idle: ["sleeping", "idle", "tea", "relax"],
+      active: ["working"],
+      thinking: ["thinking"],
+      success: ["done", "review"],
+      error: ["surprised", "angry"],
+      tired: ["tired"]
+    };
+    let singleFileRunStreak = 0;
+    let assistantMoodToken = 0;
+    let currentAssistantMood = "idle";
+    const defaultAdvancedSettings = {
+      conflictMode: "rename",
+      openOutputFolder: false,
+      openOutputFile: false,
+      clearCompleted: false
+    };
+    let appSettings = {
+      autoLaunch: true,
+      closeBehavior: "tray",
+      defaultOutputDir: "",
+      wallpaperEnabled: true,
+      animationsEnabled: true,
+      confirmBeforeConvert: false,
+      showDetailedErrors: true,
+      rememberLastTool: true,
+      advanced: { ...defaultAdvancedSettings }
+    };
+
+    function setTargetOptions(formats, preferredTarget = "") {
+      const current = targetFormat.value;
+      targetFormat.replaceChildren();
+      formats.forEach(format => {
+        const opt = document.createElement("option");
+        opt.value = format;
+        opt.textContent = format.toUpperCase();
+        targetFormat.appendChild(opt);
+      });
+      targetFormat.value = formats.includes(preferredTarget) ? preferredTarget : formats.includes(current) ? current : formats[0];
+    }
+    setTargetOptions(toolProfiles.all.targets);
+
+    function enhanceSelect(selectElement) {
+      selectElement.classList.add("native-select");
+      const custom = document.createElement("div");
+      const trigger = document.createElement("button");
+      const options = document.createElement("div");
+      custom.className = "custom-select";
+      trigger.className = "custom-select-trigger";
+      trigger.type = "button";
+      options.className = "custom-options";
+
+      const optionButtons = Array.from(selectElement.options).map(option => {
+        const button = document.createElement("button");
+        button.className = "custom-option";
+        button.type = "button";
+        button.textContent = option.textContent;
+        button.dataset.value = option.value;
+        button.addEventListener("click", () => {
+          selectElement.value = option.value;
+          syncCustomSelect();
+          closeCustomSelect();
+          selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        options.appendChild(button);
+        return button;
+      });
+
+      function positionOptions() {
+        const rect = trigger.getBoundingClientRect();
+        const viewportPadding = 14;
+        const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+        const maxHeight = Math.min(264, Math.max(132, spaceBelow));
+        options.style.left = `${rect.left}px`;
+        options.style.top = `${rect.bottom + 8}px`;
+        options.style.width = `${rect.width}px`;
+        options.style.maxHeight = `${maxHeight}px`;
+      }
+
+      function openCustomSelect() {
+        customSelects.forEach(select => {
+          if (select !== api) select.close();
+        });
+        positionOptions();
+        custom.classList.add("open");
+        options.classList.add("open");
+      }
+
+      function closeCustomSelect() {
+        custom.classList.remove("open");
+        options.classList.remove("open");
+      }
+
+      function syncCustomSelect() {
+        const current = selectElement.options[selectElement.selectedIndex];
+        trigger.textContent = current ? current.textContent : "";
+        optionButtons.forEach(button => {
+          button.classList.toggle("selected", button.dataset.value === selectElement.value);
+        });
+      }
+
+      trigger.addEventListener("click", event => {
+        event.stopPropagation();
+        if (custom.classList.contains("open")) closeCustomSelect();
+        else openCustomSelect();
+      });
+
+      options.addEventListener("click", event => event.stopPropagation());
+      custom.append(trigger);
+      selectElement.insertAdjacentElement("afterend", custom);
+      document.body.appendChild(options);
+      selectElement.addEventListener("change", syncCustomSelect);
+      window.addEventListener("resize", () => {
+        if (custom.classList.contains("open")) positionOptions();
+      });
+      document.addEventListener("scroll", () => {
+        if (custom.classList.contains("open")) positionOptions();
+      }, true);
+      syncCustomSelect();
+      const api = {
+        custom,
+        options,
+        close: closeCustomSelect,
+        refresh: () => {
+          options.replaceChildren();
+          optionButtons.length = 0;
+          Array.from(selectElement.options).forEach(option => {
+            const button = document.createElement("button");
+            button.className = "custom-option";
+            button.type = "button";
+            button.textContent = option.textContent;
+            button.dataset.value = option.value;
+            button.addEventListener("click", () => {
+              selectElement.value = option.value;
+              syncCustomSelect();
+              closeCustomSelect();
+              selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+            options.appendChild(button);
+            optionButtons.push(button);
+          });
+          syncCustomSelect();
+        }
+      };
+      return api;
+    }
+
+    const targetCustomSelect = enhanceSelect(targetFormat);
+    const customSelects = [targetCustomSelect, enhanceSelect(qualityMode)];
+    document.addEventListener("click", () => customSelects.forEach(select => select.close()));
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") customSelects.forEach(select => select.close());
+    });
+
+    document.querySelectorAll("[data-window]").forEach(button => {
+      button.addEventListener("click", () => window.acaciaFlow?.windowControl(button.dataset.window));
+    });
+
+    const navItems = [...document.querySelectorAll(".nav-item[data-category]")];
+    const heroTitle = document.querySelector(".hero-title h2");
+    const heroNote = document.querySelector(".hero-title p");
+    const formatLabel = document.querySelector(".format-label");
+    const formatChips = document.getElementById("formatChips");
+    const chipPanel = document.getElementById("chipPanel");
+    const chipPanelGrid = document.getElementById("chipPanelGrid");
+    let chipButtons = [];
+    let activeChipFormats = toolProfiles.all.tags || toolProfiles.all.targets;
+
+    function categoryForExt(sourceType) {
+      if (["jpg", "jpeg", "png", "webp", "gif", "avif", "tif", "tiff", "bmp"].includes(sourceType)) return "image";
+      if (["mp4", "mov", "mkv", "webm", "avi", "m4v", "wmv", "flv"].includes(sourceType)) return "video";
+      if (["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"].includes(sourceType)) return "audio";
+      if (sourceType === "pdf") return "pdf";
+      if (["doc", "docx", "ppt", "pptx", "odt", "odp"].includes(sourceType)) return "document";
+      if (["xls", "xlsx", "xlsm", "ods", "csv", "tsv"].includes(sourceType)) return "spreadsheet";
+      if (["txt", "md", "html", "htm", "rtf"].includes(sourceType)) return "text";
+      return "other";
+    }
+
+    function updateToolProfile(category) {
+      const profile = toolProfiles[category] || toolProfiles.all;
+      activeCategory = category;
+      document.body.dataset.tool = category;
+      heroTitle.innerHTML = profile.title;
+      heroNote.textContent = profile.note;
+      fileInput.accept = profile.accept;
+      formatLabel.textContent = category === "all" ? "支持多种格式" : "当前工具支持";
+      setTargetOptions(profile.targets, profile.targets[0]);
+      targetCustomSelect.refresh();
+      renderFormatChips(profile);
+      syncQueueTargets(false);
+      renderQueue();
+      syncFormatChips();
+    }
+
+    navItems.forEach(item => {
+      item.addEventListener("click", () => {
+        navItems.forEach(entry => entry.classList.toggle("active", entry === item));
+        updateToolProfile(item.dataset.category);
+      });
+    });
+
+    function setAssistant(message) {
+      assistantText.textContent = message;
+    }
+
+    const assistantLines = {
+      tea: "唔...好喝...欸嘿嘿",
+      done: "嗯...完美",
+      thinking: "嗯...应该是这样的...吧",
+      sleeping: "ZZ...zz...",
+      angry: "...为什么不行！...",
+      review: "啊~，就是这样",
+      relax: "'Victory'   哼哼",
+      tired: "我的命怎么比咖啡还苦啊",
+      surprised: "欸，为什么会这样呢",
+      working: "嗯...真的只是加一小会的班吗？",
+      idle: "...在哪呢...还会回来吗？"
+    };
+
+    function pickOne(items) {
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    function setAssistantMood(mood) {
+      if (!assistantMood) return;
+      const moodName = Array.isArray(mood) ? pickOne(mood) : mood;
+      const nextSrc = `../assets/assistant-states/${moodName}.png`;
+      currentAssistantMood = moodName;
+      setAssistant(assistantLines[moodName] || assistantLines.idle);
+      if (assistantMood.getAttribute("src") === nextSrc) return;
+      const token = ++assistantMoodToken;
+      assistantMood.classList.add("is-changing");
+      window.setTimeout(() => {
+        if (token !== assistantMoodToken) return;
+        assistantMood.src = nextSrc;
+        assistantMood.classList.remove("is-changing");
+      }, 90);
+    }
+
+    function setRandomAssistantMood(group) {
+      setAssistantMood(assistantMoods[group] || assistantMoods.idle);
+    }
+
+    const assistantClickMoods = ["tea", "sleeping", "relax", "idle"];
+
+    function canSelectTarget(format) {
+      return Array.from(targetFormat.options).some(option => option.value === format);
+    }
+
+    function selectTargetFormat(format) {
+      if (!canSelectTarget(format)) return false;
+      targetFormat.value = format;
+      targetFormat.dispatchEvent(new Event("change", { bubbles: true }));
+      syncFormatChips();
+      return true;
+    }
+
+    function createFormatChip(format) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "chip chip-button";
+      button.textContent = format.toUpperCase();
+      button.dataset.format = format;
+      if (!canSelectTarget(format)) button.classList.add("is-preview-only");
+      return button;
+    }
+
+    function renderFormatChips(profile) {
+      activeChipFormats = [...new Set(profile.tags || profile.targets || [])];
+      chipButtons = activeChipFormats.slice(0, 7).map(createFormatChip);
+      if (activeChipFormats.length > 7) {
+        const moreButton = document.createElement("button");
+        moreButton.type = "button";
+        moreButton.className = "chip chip-button";
+        moreButton.textContent = "...";
+        moreButton.dataset.format = "more";
+        chipButtons.push(moreButton);
+      }
+      formatChips.replaceChildren(...chipButtons, chipPanel);
+    }
+
+    function syncFormatChips() {
+      const current = targetFormat.value;
+      chipButtons.forEach(button => {
+        const format = button.dataset.format;
+        button.classList.toggle("active", format !== "more" && format === current);
+      });
+    }
+
+    function openChipPanel() {
+      chipPanelGrid.replaceChildren(...activeChipFormats.map(format => {
+        const button = createFormatChip(format);
+        button.addEventListener("click", () => {
+          selectTargetFormat(format);
+          closeChipPanel();
+        });
+        return button;
+      }));
+      chipPanel.classList.add("open");
+      chipPanel.setAttribute("aria-hidden", "false");
+    }
+
+    function closeChipPanel() {
+      chipPanel.classList.remove("open");
+      chipPanel.setAttribute("aria-hidden", "true");
+    }
+
+    document.body.dataset.tool = activeCategory;
+    renderFormatChips(toolProfiles.all);
+    syncFormatChips();
+
+    function applySettingsToUi() {
+      appSettings.wallpaperEnabled = true;
+      appSettings.animationsEnabled = true;
+      appSettings.advanced = { ...defaultAdvancedSettings, ...(appSettings.advanced || {}) };
+      autoLaunchToggle.classList.toggle("active", Boolean(appSettings.autoLaunch));
+      closeBehaviorToggle.classList.toggle("active", appSettings.closeBehavior !== "exit");
+      document.body.classList.remove("wallpaper-off", "reduced-motion");
+      defaultOutputInput.value = appSettings.defaultOutputDir || "";
+      outputHint.value = appSettings.defaultOutputDir || "";
+      conflictMode.value = appSettings.advanced.conflictMode || "rename";
+      openFolderToggle.classList.toggle("active", Boolean(appSettings.advanced.openOutputFolder));
+      if (openFileToggle) openFileToggle.classList.toggle("active", Boolean(appSettings.advanced.openOutputFile));
+      clearCompletedToggle.classList.toggle("active", Boolean(appSettings.advanced.clearCompleted));
+      if (confirmBeforeToggle) confirmBeforeToggle.classList.toggle("active", Boolean(appSettings.confirmBeforeConvert));
+      if (detailsErrorToggle) detailsErrorToggle.classList.toggle("active", appSettings.showDetailedErrors !== false);
+      if (rememberToolToggle) rememberToolToggle.classList.toggle("active", appSettings.rememberLastTool !== false);
+    }
+
+    function openSettingsModal() {
+      applySettingsToUi();
+      settingsModal.classList.add("open");
+      settingsModal.classList.remove("closing");
+      settingsModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeSettingsModal() {
+      settingsModal.classList.add("closing");
+      window.setTimeout(() => {
+        settingsModal.classList.remove("open", "closing");
+        settingsModal.setAttribute("aria-hidden", "true");
+      }, 180);
+    }
+
+    function openAdvancedModal() {
+      applySettingsToUi();
+      advancedModal.classList.add("open");
+      advancedModal.classList.remove("closing");
+      advancedModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeAdvancedModal() {
+      advancedModal.classList.add("closing");
+      window.setTimeout(() => {
+        advancedModal.classList.remove("open", "closing");
+        advancedModal.setAttribute("aria-hidden", "true");
+      }, 180);
+    }
+
+    function bindModalClose(button, closeModal) {
+      const handler = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeModal();
+      };
+      button.addEventListener("click", handler);
+      button.addEventListener("pointerup", handler);
+    }
+
+    async function loadAppSettings() {
+      if (!window.acaciaFlow?.getSettings) return;
+      appSettings = await window.acaciaFlow.getSettings();
+      applySettingsToUi();
+    }
+
+    async function persistSettings(nextSettings) {
+      if (!window.acaciaFlow?.saveSettings) {
+        setRandomAssistantMood("error");
+        return;
+      }
+      appSettings = await window.acaciaFlow.saveSettings(nextSettings);
+      applySettingsToUi();
+    }
+
+    function detectType(name) {
+      const ext = (name.split(".").pop() || "unknown").toLowerCase();
+      if (ext === "jpeg") return "jpg";
+      if (ext === "tif") return "tiff";
+      if (ext === "htm") return "html";
+      return ext;
+    }
+
+    function fileSize(bytes) {
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function statusText(item) {
+      if (item.status === "Done") return "✓ 已完成";
+      if (item.status === "Converting") return "正在转换…";
+      if (item.status === "Failed") return item.error ? `转换失败：${item.error}` : "转换失败";
+      if (item.status === "Unsupported") return "当前输出格式不支持此文件";
+      if (item.status === "Skipped") return "已跳过";
+      return "等待中…";
+    }
+
+    function currentTarget() {
+      return targetFormat.value;
+    }
+
+    function syncQueueTargets(updateAssistant = true) {
+      const target = currentTarget();
+      let hasUnsupported = false;
+      queue.forEach(item => {
+        if (item.status === "Converting") return;
+        item.target = target;
+        item.status = isSupportedRoute(item.sourceType, target) ? "Queued" : "Unsupported";
+        item.error = "";
+        if (item.status === "Unsupported") hasUnsupported = true;
+        item.outPath = "";
+      });
+      if (updateAssistant && queue.length) {
+        setRandomAssistantMood(hasUnsupported ? "error" : "active");
+      }
+    }
+
+    function renderQueue() {
+      queueTitle.textContent = `转换队列（${queue.length}）`;
+      queueBody.innerHTML = "";
+      queue.forEach((item, index) => {
+        const target = item.target || currentTarget();
+        const card = document.createElement("div");
+        const statusClass = item.status === "Done" || item.status === "Skipped" ? "status-ok" : item.status === "Failed" || item.status === "Unsupported" ? "status-bad" : "";
+        card.className = "queue-card";
+        card.innerHTML = `
+          <div class="queue-main">
+            <div class="file-icon">${escapeHtml(item.sourceType.toUpperCase().slice(0, 4))}</div>
+            <div>
+              <div class="queue-name">${escapeHtml(item.file.name)}</div>
+              <div class="queue-meta">${fileSize(item.file.size)} · ${escapeHtml(item.sourceType.toUpperCase())} → ${escapeHtml(target.toUpperCase())}</div>
+            </div>
+          </div>
+          <div class="queue-status ${statusClass}" title="${escapeHtml(item.error || "")}">${escapeHtml(statusText(item))}</div>
+          <div class="progress-track"><div class="progress-fill" style="width:${item.status === "Done" || item.status === "Skipped" ? "100" : item.status === "Converting" ? "66" : "0"}%"></div></div>
+        `;
+        if (item.status === "Queued" || item.status === "Unsupported") {
+          card.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            openQueueDeleteMenu(index, event.clientX, event.clientY, card);
+          });
+        }
+        queueBody.appendChild(card);
+      });
+    }
+
+    function closeQueueDeleteMenu() {
+      queueDeleteMenu?.classList.remove("open");
+      queueDeleteMenu?.setAttribute("aria-hidden", "true");
+      if (queueDeleteMenu) queueDeleteMenu.dataset.index = "";
+      document.querySelectorAll(".queue-card.menu-open").forEach(card => card.classList.remove("menu-open"));
+    }
+
+    function openQueueDeleteMenu(index, x, y, card) {
+      if (!queueDeleteMenu) return;
+      queueDeleteMenu.style.left = `${Math.min(x, window.innerWidth - 150)}px`;
+      queueDeleteMenu.style.top = `${Math.min(y, window.innerHeight - 56)}px`;
+      queueDeleteMenu.classList.add("open");
+      queueDeleteMenu.setAttribute("aria-hidden", "false");
+      queueDeleteMenu.dataset.index = String(index);
+      document.querySelectorAll(".queue-card.menu-open").forEach(item => item.classList.remove("menu-open"));
+      card.classList.add("menu-open");
+    }
+
+    function removeQueueItem(index) {
+      if (Number.isNaN(index) || index < 0 || index >= queue.length) return;
+      queue.splice(index, 1);
+      closeQueueDeleteMenu();
+      renderQueue();
+    }
+
+    function isSupportedRoute(sourceType, target) {
+      const category = categoryForExt(sourceType);
+      if (category === "image") return ["png", "jpg", "webp", "gif", "avif", "tiff", "bmp", "pdf"].includes(target);
+      if (category === "video") return ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a"].includes(target);
+      if (category === "audio") return ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"].includes(target);
+      if (category === "pdf") return ["txt", "md", "html", "docx", "pdf"].includes(target);
+      if (category === "document") return ["txt", "md", "html", "doc", "docx", "pdf", "rtf"].includes(target);
+      if (category === "spreadsheet") return ["txt", "md", "html", "csv", "xlsx", "xls", "pdf"].includes(target);
+      if (category === "text") return ["txt", "md", "html", "csv", "rtf", "docx", "doc", "xlsx", "xls", "pdf"].includes(target);
+      return false;
+    }
+
+    function addFiles(files) {
+      const target = currentTarget();
+      let hasUnsupported = false;
+      [...files].forEach(file => {
+        const sourceType = detectType(file.name);
+        const status = isSupportedRoute(sourceType, target)
+          ? "Queued"
+          : "Unsupported";
+        if (status === "Unsupported") hasUnsupported = true;
+        queue.push({
+          file,
+          sourceType,
+          target,
+          status
+        });
+      });
+      fileInput.value = "";
+      renderQueue();
+      setRandomAssistantMood(hasUnsupported ? "error" : "active");
+    }
+
+    targetFormat.addEventListener("change", () => {
+      syncQueueTargets();
+      renderQueue();
+    });
+
+    selectBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", event => addFiles(event.target.files));
+    dropZone.addEventListener("dragover", event => {
+      event.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", event => {
+      event.preventDefault();
+      dropZone.classList.remove("dragover");
+      addFiles(event.dataTransfer.files);
+    });
+
+    function clearQueue() {
+      queue.length = 0;
+      renderQueue();
+      setRandomAssistantMood("idle");
+    }
+
+    queueClearBtn.addEventListener("click", clearQueue);
+    queueDeleteBtn.addEventListener("click", () => {
+      removeQueueItem(Number(queueDeleteMenu?.dataset.index));
+    });
+    document.addEventListener("click", event => {
+      if (queueDeleteMenu && !queueDeleteMenu.contains(event.target)) closeQueueDeleteMenu();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeQueueDeleteMenu();
+    });
+    settingsBtn.addEventListener("click", openSettingsModal);
+    bindModalClose(settingsCloseBtn, closeSettingsModal);
+    settingsModal.addEventListener("click", event => {
+      if (event.target === settingsModal) closeSettingsModal();
+    });
+    advancedBtn.addEventListener("click", openAdvancedModal);
+    bindModalClose(advancedCloseBtn, closeAdvancedModal);
+    advancedModal.addEventListener("click", event => {
+      if (event.target === advancedModal) closeAdvancedModal();
+    });
+    assistantMood.addEventListener("click", () => {
+      if (currentAssistantMood === "working") return;
+      setAssistantMood(pickOne(assistantClickMoods));
+    });
+    formatChips.addEventListener("click", event => {
+      const button = event.target.closest("[data-format]");
+      if (!button) return;
+      const { format } = button.dataset;
+      if (format === "more") {
+        if (chipPanel.classList.contains("open")) closeChipPanel();
+        else openChipPanel();
+        return;
+      }
+      selectTargetFormat(format);
+      closeChipPanel();
+    });
+    document.addEventListener("click", event => {
+      if (!formatChips.contains(event.target)) closeChipPanel();
+    });
+    targetFormat.addEventListener("change", syncFormatChips);
+    autoLaunchToggle.addEventListener("click", () => {
+      appSettings.autoLaunch = !appSettings.autoLaunch;
+      applySettingsToUi();
+    });
+    closeBehaviorToggle.addEventListener("click", () => {
+      appSettings.closeBehavior = appSettings.closeBehavior === "exit" ? "tray" : "exit";
+      applySettingsToUi();
+    });
+    const confirmBeforeToggle = document.getElementById("confirmBeforeToggle");
+    const detailsErrorToggle = document.getElementById("detailsErrorToggle");
+    const rememberToolToggle = document.getElementById("rememberToolToggle");
+    const openFileToggle = document.getElementById("openFileToggle");
+    confirmBeforeToggle?.addEventListener("click", () => {
+      appSettings.confirmBeforeConvert = !appSettings.confirmBeforeConvert;
+      applySettingsToUi();
+    });
+    detailsErrorToggle?.addEventListener("click", () => {
+      appSettings.showDetailedErrors = appSettings.showDetailedErrors === false;
+      applySettingsToUi();
+    });
+    rememberToolToggle?.addEventListener("click", () => {
+      appSettings.rememberLastTool = appSettings.rememberLastTool === false;
+      applySettingsToUi();
+    });
+    openFileToggle?.addEventListener("click", () => {
+      appSettings.advanced = { ...defaultAdvancedSettings, ...(appSettings.advanced || {}) };
+      appSettings.advanced.openOutputFile = !appSettings.advanced.openOutputFile;
+      applySettingsToUi();
+    });
+    openFolderToggle.addEventListener("click", () => {
+      appSettings.advanced = { ...defaultAdvancedSettings, ...(appSettings.advanced || {}) };
+      appSettings.advanced.openOutputFolder = !appSettings.advanced.openOutputFolder;
+      applySettingsToUi();
+    });
+    clearCompletedToggle.addEventListener("click", () => {
+      appSettings.advanced = { ...defaultAdvancedSettings, ...(appSettings.advanced || {}) };
+      appSettings.advanced.clearCompleted = !appSettings.advanced.clearCompleted;
+      applySettingsToUi();
+    });
+    conflictMode.addEventListener("change", () => {
+      appSettings.advanced = { ...defaultAdvancedSettings, ...(appSettings.advanced || {}) };
+      appSettings.advanced.conflictMode = conflictMode.value;
+    });
+
+    defaultOutputInput.addEventListener("input", () => {
+      appSettings.defaultOutputDir = defaultOutputInput.value.trim();
+    });
+    defaultOutputBtn.addEventListener("click", async () => {
+      if (!window.acaciaFlow) {
+        setRandomAssistantMood("error");
+        return;
+      }
+      const folder = await window.acaciaFlow.chooseOutputDir();
+      if (folder) {
+        appSettings.defaultOutputDir = folder;
+        applySettingsToUi();
+      }
+    });
+    saveSettingsBtn.addEventListener("click", async () => {
+      await persistSettings({
+        autoLaunch: appSettings.autoLaunch,
+        closeBehavior: appSettings.closeBehavior,
+        defaultOutputDir: defaultOutputInput.value.trim(),
+        wallpaperEnabled: true,
+        animationsEnabled: true,
+        confirmBeforeConvert: Boolean(appSettings.confirmBeforeConvert),
+        showDetailedErrors: appSettings.showDetailedErrors !== false,
+        rememberLastTool: appSettings.rememberLastTool !== false,
+        advanced: { ...defaultAdvancedSettings, ...(appSettings.advanced || {}) }
+      });
+      closeSettingsModal();
+    });
+    saveAdvancedBtn.addEventListener("click", async () => {
+      appSettings.advanced = {
+        conflictMode: conflictMode.value,
+        openOutputFolder: openFolderToggle.classList.contains("active"),
+        clearCompleted: clearCompletedToggle.classList.contains("active")
+      };
+      await persistSettings({
+        autoLaunch: appSettings.autoLaunch,
+        closeBehavior: appSettings.closeBehavior,
+        defaultOutputDir: defaultOutputInput.value.trim(),
+        wallpaperEnabled: true,
+        animationsEnabled: true,
+        confirmBeforeConvert: Boolean(appSettings.confirmBeforeConvert),
+        showDetailedErrors: appSettings.showDetailedErrors !== false,
+        rememberLastTool: appSettings.rememberLastTool !== false,
+        advanced: appSettings.advanced
+      });
+      closeAdvancedModal();
+    });
+    resetSettingsBtn.addEventListener("click", async () => {
+      if (!window.acaciaFlow?.resetSettings) return;
+      appSettings = await window.acaciaFlow.resetSettings();
+      applySettingsToUi();
+    });
+    outputBtn.addEventListener("click", async () => {
+      if (!window.acaciaFlow) {
+        setRandomAssistantMood("error");
+        return;
+      }
+      const folder = await window.acaciaFlow.chooseOutputDir();
+      if (folder) {
+        outputHint.value = folder;
+      }
+    });
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function parseCsv(text) {
+      return text.split(/\r?\n/).filter(line => line.length).map(line => line.split(",").map(cell => cell.trim()));
+    }
+
+    function textToRows(text) {
+      return text.split(/\r?\n/).filter(line => line.length).map(line => line.includes("\t") ? line.split("\t") : line.split(/\s{2,}|,/));
+    }
+
+    function tableToCsv(rows) {
+      return rows.map(row => row.map(cell => {
+        const value = cell == null ? "" : String(cell);
+        if (/[",\n]/.test(value)) return `"${value.replaceAll('"', '""')}"`;
+        return value;
+      }).join(",")).join("\n");
+    }
+
+    function tableToHtml(rows) {
+      const body = rows.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell ?? "")}</td>`).join("")}</tr>`).join("");
+      return `<!doctype html><html><head><meta charset="utf-8"></head><body><table>${body}</table></body></html>`;
+    }
+
+    function markdownTable(rows) {
+      if (!rows.length) return "";
+      const width = Math.max(...rows.map(row => row.length), 0);
+      const normalized = rows.map(row => {
+        const next = row.slice();
+        while (next.length < width) next.push("");
+        return next;
+      });
+      const header = normalized[0] || [];
+      const divider = header.map(() => "---");
+      return [header, divider, ...normalized.slice(1)]
+        .map(row => `| ${row.map(cell => String(cell ?? "").replaceAll("|", "\\|")).join(" | ")} |`)
+        .join("\n");
+    }
+
+    function plainTextFromHtml(html) {
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      return doc.body ? doc.body.innerText : html;
+    }
+
+    function stripRtf(rtf) {
+      return rtf
+        .replace(/\\par[d]?/g, "\n")
+        .replace(/\\'[0-9a-fA-F]{2}/g, "")
+        .replace(/\\[a-zA-Z]+-?\d* ?/g, "")
+        .replace(/[{}]/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function sourceToText(data) {
+      if (data.kind === "table") return data.rows.map(row => row.join("\t")).join("\n");
+      if (data.kind === "html") return plainTextFromHtml(data.html);
+      return data.text || "";
+    }
+
+    function sourceToRows(data) {
+      if (data.kind === "table") return data.rows;
+      return textToRows(sourceToText(data));
+    }
+
+    async function extractDocx(file) {
+      if (!window.mammoth) throw new Error("docx 解析库未加载");
+      const buffer = await file.arrayBuffer();
+      const raw = await mammoth.extractRawText({ arrayBuffer: buffer.slice(0) });
+      const html = await mammoth.convertToHtml({ arrayBuffer: buffer.slice(0) });
+      return { kind: "html", text: raw.value || "", html: html.value || "" };
+    }
+
+    async function extractXlsx(file) {
+      if (!window.XLSX) throw new Error("xlsx 解析库未加载");
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) return { kind: "table", rows: [] };
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+      return { kind: "table", rows };
+    }
+
+    async function extractPptx(file) {
+      if (!window.JSZip) throw new Error("pptx 解析库未加载");
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const slideNames = Object.keys(zip.files)
+        .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
+        .sort((a, b) => Number(a.match(/slide(\d+)/)[1]) - Number(b.match(/slide(\d+)/)[1]));
+      const lines = [];
+      for (const name of slideNames) {
+        const xml = await zip.files[name].async("text");
+        const doc = new DOMParser().parseFromString(xml, "application/xml");
+        const textNodes = [...doc.getElementsByTagName("a:t")].map(node => node.textContent).filter(Boolean);
+        if (textNodes.length) lines.push(textNodes.join(" "));
+      }
+      return { kind: "text", text: lines.join("\n\n") };
+    }
+
+    async function extractPdf(file) {
+      if (!window.pdfjsLib) throw new Error("PDF 解析库未加载");
+      const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      for (let i = 1; i <= pdf.numPages; i += 1) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        pages.push(content.items.map(item => item.str).join(" "));
+      }
+      return { kind: "text", text: pages.join("\n\n") };
+    }
+
+    async function extractSource(file) {
+      const ext = detectType(file.name);
+      if (ext === "docx") return extractDocx(file);
+      if (ext === "xlsx" || ext === "xls") return extractXlsx(file);
+      if (ext === "pptx") return extractPptx(file);
+      if (ext === "pdf") return extractPdf(file);
+      if (ext === "csv") return { kind: "table", rows: parseCsv(await file.text()) };
+      if (ext === "tsv") return { kind: "table", rows: (await file.text()).split(/\r?\n/).filter(Boolean).map(line => line.split("\t")) };
+      if (ext === "rtf") return { kind: "text", text: stripRtf(await file.text()) };
+      if (ext === "html" || ext === "htm") {
+        const html = await file.text();
+        return { kind: "html", html, text: plainTextFromHtml(html) };
+      }
+      return { kind: "text", text: await file.text() };
+    }
+
+    function convertToTextLike(data, target) {
+      const text = sourceToText(data);
+      if (target === "txt") return text;
+      if (target === "md") return data.kind === "table" ? markdownTable(data.rows) : text;
+      if (target === "html") return data.kind === "table" ? tableToHtml(data.rows) : `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${escapeHtml(text)}</pre></body></html>`;
+      if (target === "csv") return tableToCsv(sourceToRows(data));
+      if (target === "rtf") return `{\\rtf1\\ansi\\deff0 ${text.replaceAll("\\", "\\\\").replaceAll("{", "\\{").replaceAll("}", "\\}").replace(/\r?\n/g, "\\par ")}}`;
+      throw new Error(`暂不支持导出为 ${target}`);
+    }
+
+    async function makeDocxBlob(data) {
+      if (!window.docx) throw new Error("docx 生成库未加载");
+      const { Document, Packer, Paragraph, TextRun } = window.docx;
+      const children = sourceToText(data).split(/\r?\n/).map(line => new Paragraph({ children: [new TextRun(line || " ")] }));
+      const document = new Document({ sections: [{ children }] });
+      return Packer.toBlob(document);
+    }
+
+    function makeWordHtmlBlob(data) {
+      const html = data.kind === "html" ? data.html : convertToTextLike(data, "html");
+      return new Blob(["\ufeff" + html], { type: "application/msword;charset=utf-8" });
+    }
+
+    function makeXlsxBlob(data) {
+      if (!window.XLSX) throw new Error("xlsx 生成库未加载");
+      const workbook = XLSX.utils.book_new();
+      const sheet = XLSX.utils.aoa_to_sheet(sourceToRows(data));
+      XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
+      const array = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      return new Blob([array], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    }
+
+    function makeExcelHtmlBlob(data) {
+      return new Blob(["\ufeff" + tableToHtml(sourceToRows(data))], { type: "application/vnd.ms-excel;charset=utf-8" });
+    }
+
+    function makePdfBlob(data) {
+      if (!window.jspdf) throw new Error("PDF 生成库未加载");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const lines = pdf.splitTextToSize(sourceToText(data), 515);
+      let y = 42;
+      lines.forEach(line => {
+        if (y > 800) {
+          pdf.addPage();
+          y = 42;
+        }
+        pdf.text(line, 40, y);
+        y += 16;
+      });
+      return pdf.output("blob");
+    }
+
+    async function renderOutput(data, target) {
+      if (["txt", "md", "html", "csv", "rtf"].includes(target)) {
+        const output = convertToTextLike(data, target);
+        const body = ["txt", "md", "csv"].includes(target) ? "\ufeff" + output : output;
+        const mime = target === "html" ? "text/html;charset=utf-8" : target === "rtf" ? "application/rtf;charset=utf-8" : "text/plain;charset=utf-8";
+        return new Blob([body], { type: mime });
+      }
+      if (target === "docx") return makeDocxBlob(data);
+      if (target === "doc") return makeWordHtmlBlob(data);
+      if (target === "xlsx") return makeXlsxBlob(data);
+      if (target === "xls") return makeExcelHtmlBlob(data);
+      if (target === "pdf") return makePdfBlob(data);
+      throw new Error(`暂不支持导出为 ${target}`);
+    }
+
+    async function convertOne(item, index) {
+      const ext = detectType(item.file.name);
+      const target = currentTarget();
+      item.target = target;
+      if (!isSupportedRoute(ext, target)) throw new Error(`当前版本暂不支持 ${ext} -> ${target}`);
+      if (!window.acaciaFlow?.convertFile || !window.acaciaFlow?.getFilePath) {
+        throw new Error("桌面转换服务未加载，请重新打开 Acacia Flow。");
+      }
+      item.status = "Converting";
+      setRandomAssistantMood("thinking");
+      renderQueue();
+      const sourcePath = window.acaciaFlow.getFilePath(item.file);
+      const result = await window.acaciaFlow.convertFile({
+        sourcePath,
+        target,
+        outputDir: outputHint.value.trim(),
+        conflictMode: appSettings.advanced?.conflictMode || "rename"
+      });
+      item.outPath = result.outPath;
+      item.status = result.skipped ? "Skipped" : "Done";
+      if (appSettings.advanced?.openOutputFile && window.acaciaFlow?.openPath && result.outPath) {
+        await window.acaciaFlow.openPath(result.outPath);
+      }
+      renderQueue();
+    }
+
+    convertBtn.addEventListener("click", async () => {
+      if (!queue.length) {
+        setRandomAssistantMood("idle");
+        return;
+      }
+      if (appSettings.confirmBeforeConvert) {
+        const ok = confirm(`将开始转换 ${queue.length} 个文件，是否继续？`);
+        if (!ok) return;
+      }
+      if (!outputHint.value.trim()) {
+        alert("请先填写或选择输出路径。");
+        setRandomAssistantMood("error");
+        outputHint.focus();
+        return;
+      }
+      const runSize = queue.length;
+      let hadProblem = queue.some(item => item.status === "Unsupported");
+      convertBtn.disabled = true;
+      setRandomAssistantMood("thinking");
+      try {
+        for (let index = 0; index < queue.length; index += 1) {
+          const item = queue[index];
+          try {
+            await convertOne(item, index);
+          } catch (err) {
+            hadProblem = true;
+            item.status = "Failed";
+            item.error = appSettings.showDetailedErrors === false ? "转换失败" : String(err?.message || err || "未知错误").slice(0, 180);
+            renderQueue();
+          }
+        }
+        if (hadProblem) {
+          singleFileRunStreak = 0;
+          setRandomAssistantMood("error");
+        } else {
+          singleFileRunStreak = runSize === 1 ? singleFileRunStreak + 1 : 0;
+          setRandomAssistantMood(runSize >= 3 || singleFileRunStreak >= 3 ? "tired" : "success");
+            if (appSettings.advanced?.clearCompleted) {
+              for (let index = queue.length - 1; index >= 0; index -= 1) {
+                if (queue[index].status === "Done" || queue[index].status === "Skipped") queue.splice(index, 1);
+              }
+              renderQueue();
+            }
+            if (appSettings.advanced?.openOutputFolder && window.acaciaFlow?.openOutputDir) {
+              await window.acaciaFlow.openOutputDir(outputHint.value.trim());
+            }
+          }
+        } finally {
+          convertBtn.disabled = false;
+        }
+      });
+
+    setRandomAssistantMood("idle");
+    renderQueue();
+    loadAppSettings();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

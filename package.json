@@ -1,0 +1,62 @@
+{
+  "name": "acacia-flow",
+  "version": "0.1.0",
+  "description": "Office format transformer",
+  "main": "src/main/electron-main.js",
+  "author": "Acacia Flow",
+  "license": "MIT",
+  "scripts": {
+    "start": "node scripts/start-electron.js",
+    "dist": "node scripts/build-installer.js",
+    "dist:raw": "electron-builder --win nsis",
+    "test:smoke": "node scripts/run-smoke.js"
+  },
+  "build": {
+    "appId": "com.acaciaflow.transformer",
+    "productName": "Acacia Flow",
+    "directories": {
+      "output": "build/installer"
+    },
+    "files": [
+      "src/**/*",
+      "web/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/@ffmpeg-installer/**/*",
+      "node_modules/@ffmpeg-installer/win32-x64/**/*",
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*"
+    ],
+    "win": {
+      "icon": "assets/acacia_flow.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Acacia Flow"
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "pdf-lib": "^1.17.1",
+    "png-to-ico": "^3.0.2",
+    "sharp": "^0.35.4"
+  }
+}
