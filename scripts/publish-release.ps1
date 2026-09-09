@@ -1,13 +1,13 @@
 param(
   [string]$Repo = "Chengyi7888/Acacia-flow",
   [string]$Tag = "v0.1.0",
-  [string]$AssetPath = "Acacia Flow Setup 0.1.0.exe"
+  [string]$AssetPath = "Acacia Flow Setup 0.1.0.exe",
+  [string]$AssetName = "Acacia.Flow.Setup.0.1.0.exe"
 )
 
 $ErrorActionPreference = "Stop"
 
 $resolvedAsset = (Resolve-Path -LiteralPath $AssetPath).Path
-$assetName = [IO.Path]::GetFileName($resolvedAsset)
 $credentialInput = "protocol=https`nhost=github.com`n`n"
 $credentialText = $credentialInput | git credential fill
 $tokenLine = ($credentialText -split "`n") | Where-Object { $_ -like "password=*" } | Select-Object -First 1
@@ -37,13 +37,32 @@ try {
 }
 
 foreach ($asset in @($release.assets)) {
-  if ($asset.name -eq $assetName) {
+  if ($asset.name -eq $AssetName) {
     Invoke-RestMethod -Method Delete -Uri $asset.url -Headers $headers | Out-Null
   }
 }
 
-$uploadUrl = $release.upload_url -replace "\{\?name,label\}", "?name=$([uri]::EscapeDataString($assetName))"
-$uploaded = Invoke-RestMethod -Method Post -Uri $uploadUrl -Headers $headers -InFile $resolvedAsset -ContentType "application/octet-stream"
+$uploadUrl = $release.upload_url -replace "\{\?name,label\}", "?name=$([uri]::EscapeDataString($AssetName))"
+$uploadOutput = Join-Path $env:TEMP "acacia-release-upload.json"
+$env:ACACIA_GITHUB_TOKEN = $token
+try {
+  & curl.exe --fail-with-body --retry 5 --retry-delay 5 --retry-all-errors -X POST `
+    -H "Authorization: Bearer $env:ACACIA_GITHUB_TOKEN" `
+    -H "Accept: application/vnd.github+json" `
+    -H "X-GitHub-Api-Version: 2022-11-28" `
+    -H "User-Agent: Acacia-Flow-Release-Uploader" `
+    -H "Content-Type: application/octet-stream" `
+    --data-binary "@$resolvedAsset" `
+    $uploadUrl `
+    -o $uploadOutput
+  if ($LASTEXITCODE -ne 0) {
+    throw "Release asset upload failed with exit code $LASTEXITCODE."
+  }
+} finally {
+  Remove-Item Env:\ACACIA_GITHUB_TOKEN -ErrorAction SilentlyContinue
+}
+
+$uploaded = Get-Content -LiteralPath $uploadOutput -Raw | ConvertFrom-Json
 
 [PSCustomObject]@{
   tag = $Tag
