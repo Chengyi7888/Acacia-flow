@@ -1,97 +1,58 @@
 # Acacia Flow
 
-Acacia Flow 是一个面向 Windows 的本地离线文件格式转换工具。它基于 Electron 构建，提供图片、音频、视频、PDF、文本和常见文档格式的转换入口，并带有一个会随转换状态变化的小助手界面。
+Acacia Flow is a Windows desktop file conversion app built with Electron. It provides a clean drag-and-drop interface for converting common images, audio, video, PDFs, text files, and office-style documents locally on your computer.
 
-## 特性
+## Download
 
-- 本地离线运行，不依赖 Codex、ChatGPT、本机插件或云端服务。
-- 支持常见图片格式互转，并支持图片生成 PDF。
-- 支持音频和视频格式转换，内置 FFmpeg 二进制依赖。
-- 支持 TXT、MD、HTML、CSV、RTF、DOCX、XLSX、PDF 等文本/表格类转换。
-- 支持 PDF 文本提取和 PDF 到 TXT/MD/HTML/DOCX 的常用转换流程。
-- 支持转换队列、右键删除、输出目录选择、同名文件处理和托盘关闭行为。
-- 安装包会创建桌面快捷方式和开始菜单快捷方式。
-
-## 下载使用
-
-普通用户可以直接下载仓库根目录中的 Windows 安装包，或在 Release 页面下载同名安装包：
+Please download the latest Windows installer from the GitHub Releases page:
 
 ```text
 Acacia Flow Setup 0.1.0.exe
 ```
 
-双击安装后即可使用。应用安装后会在本机离线运行。
+After downloading, run the installer and launch Acacia Flow from the desktop shortcut or the Start Menu.
 
-> 安装包通过 Git LFS 存储。如果克隆仓库后看到的是很小的指针文件，请先安装 Git LFS 并运行 `git lfs pull`。
+## Features
 
-## 开发环境
+- Local file conversion with no cloud upload.
+- Image conversion for common formats such as PNG, JPG, WEBP, GIF, AVIF, TIFF, BMP, and PDF.
+- Audio conversion for MP3, WAV, FLAC, M4A, AAC, OGG, OPUS, and WMA.
+- Video conversion for MP4, MOV, MKV, WEBM, GIF, and audio extraction.
+- PDF conversion and text extraction for common PDF workflows.
+- Text and table conversion for TXT, MD, HTML, CSV, RTF, DOCX, XLSX, and PDF.
+- Conversion queue with removable items before conversion starts.
+- Output folder selection, duplicate-name handling, and tray behavior settings.
+- Animated assistant states that reflect file selection, conversion progress, completion, and errors.
 
-需要安装：
+## Offline Use
 
-- Node.js 20 或更高版本
-- npm
-- Windows 10/11
+Acacia Flow runs locally after installation. The app does not require Codex, ChatGPT, local developer plugins, or a cloud service to operate.
 
-安装依赖：
+FFmpeg is bundled for audio and video conversion. Some advanced Office document conversions may require LibreOffice to be installed on the user's computer; when LibreOffice is available, Acacia Flow can use it automatically for broader Office format support.
 
-```bash
-npm install
-```
+## Supported Conversion Examples
 
-本地启动：
+- Text to PDF, DOCX, XLSX, TXT, MD, HTML, CSV, and RTF.
+- PDF to TXT, MD, HTML, DOCX, or cleaned PDF output.
+- Image to PNG, JPG, WEBP, GIF, AVIF, TIFF, BMP, or PDF.
+- Audio to MP3, WAV, FLAC, M4A, AAC, OGG, OPUS, or WMA.
+- Video to MP4, MOV, MKV, WEBM, GIF, or common audio formats.
 
-```bash
-npm start
-```
-
-运行核心转换烟测：
-
-```bash
-npm run test:smoke
-```
-
-生成 Windows 安装包：
-
-```bash
-npm run dist
-```
-
-构建完成后，安装包会输出到项目根目录：
+## Project Structure
 
 ```text
-Acacia Flow Setup 0.1.0.exe
+assets/                 App icons, background image, and assistant state images
+scripts/                Build and smoke-test scripts
+src/main/               Electron main process, preload script, and conversion engine
+web/                    User interface
+web/vendor/             Bundled browser-side libraries used by the app
+package.json            App metadata and build configuration
 ```
 
-构建过程中产生的临时目录会自动清理。
+## Privacy
 
-## 项目结构
+Acacia Flow processes files on the local machine. User files are not uploaded by the app during normal conversion workflows.
 
-```text
-assets/                 应用图标、背景图、小助手状态图
-scripts/                启动、构建、烟测脚本
-src/main/               Electron 主进程、预加载脚本、转换引擎
-web/                    前端界面
-web/vendor/             离线浏览器端依赖
-package.json            项目配置和打包配置
-```
+## License
 
-## 转换能力说明
-
-内置转换能力覆盖常见场景，但部分 Office 专有格式转换依赖 LibreOffice。若目标机器安装了 LibreOffice，Acacia Flow 会自动检测并调用它完成 DOC/DOCX/PPT/PPTX/XLS/XLSX/ODT/ODS/ODP 等更完整的 Office 转换。
-
-不依赖 LibreOffice 的常用路径包括：
-
-- TXT/MD/HTML/CSV/RTF 到 TXT、MD、HTML、CSV、RTF
-- TXT/MD/HTML/CSV/RTF 到 DOCX、XLSX、PDF
-- PDF 到 TXT、MD、HTML、DOCX
-- 图片到 PNG、JPG、WEBP、GIF、AVIF、TIFF、BMP、PDF
-- 音频到 MP3、WAV、FLAC、M4A、AAC、OGG、OPUS、WMA
-- 视频到 MP4、MOV、MKV、WEBM、GIF，以及提取音频到常见音频格式
-
-## 隐私和离线
-
-Acacia Flow 的转换逻辑在本地执行，不会上传用户文件。项目源码和安装包不包含开发者本机的 Codex 配置、`.codex`、`.agents`、桌面路径或本地插件路径。
-
-## 许可证
-
-本项目使用 MIT License 开源。第三方依赖遵循其各自许可证。
+This project is released under the MIT License. Third-party dependencies remain under their own licenses.
