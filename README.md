@@ -4,10 +4,10 @@ Acacia Flow is a Windows desktop file conversion app built with Electron. It pro
 
 ## Download
 
-Please download the latest Windows installer from the GitHub Releases page:
+Please download the latest Windows installer from the [GitHub Releases page](https://github.com/Chengyi7888/Acacia-flow/releases):
 
 ```text
-Acacia Flow Setup 0.1.0.exe
+Acacia.Flow.Setup.0.1.0.exe
 ```
 
 After downloading, run the installer and launch Acacia Flow from the desktop shortcut or the Start Menu.
