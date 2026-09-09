@@ -14,13 +14,15 @@ Acacia Flow 是一个面向 Windows 的本地离线文件格式转换工具。�
 
 ## 下载使用
 
-普通用户建议下载 Release 页面中的 Windows 安装包：
+普通用户可以直接下载仓库根目录中的 Windows 安装包，或在 Release 页面下载同名安装包：
 
 ```text
 Acacia Flow Setup 0.1.0.exe
 ```
 
 双击安装后即可使用。应用安装后会在本机离线运行。
+
+> 安装包通过 Git LFS 存储。如果克隆仓库后看到的是很小的指针文件，请先安装 Git LFS 并运行 `git lfs pull`。
 
 ## 开发环境
 
