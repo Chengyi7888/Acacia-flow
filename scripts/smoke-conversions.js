@@ -88,6 +88,16 @@ async function main() {
   }
 
   const pdfResult = results.find(result => result.name === "text to pdf");
+  const docxResult = results.find(result => result.name === "text to docx");
+  if (docxResult?.path) {
+    try {
+      const result = await convertFile({ sourcePath: docxResult.path, target: "txt", outputDir, conflictMode: "rename" });
+      results.push({ name: "docx to txt", target: "txt", path: result.outPath, ok: await exists(result.outPath) });
+    } catch (error) {
+      results.push({ name: "docx to txt", target: "txt", ok: false, error: String(error?.message || error) });
+    }
+  }
+
   if (pdfResult?.path) {
     try {
       const result = await convertFile({ sourcePath: pdfResult.path, target: "txt", outputDir, conflictMode: "rename" });

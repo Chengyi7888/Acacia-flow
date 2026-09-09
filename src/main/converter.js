@@ -19,6 +19,8 @@ const audioTargets = new Set(["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus",
 const videoTargets = new Set(["mp4", "mov", "mkv", "webm", "gif"]);
 const officeInputs = new Set(["doc", "docx", "ppt", "pptx", "xls", "xlsx", "odt", "ods", "odp", "rtf"]);
 const officeTargets = new Set(["pdf", "doc", "docx", "pptx", "xlsx", "xls", "odt", "ods", "odp", "txt", "html", "rtf"]);
+const nativelyReadableOfficeInputs = new Set(["docx", "pptx", "xls", "xlsx", "rtf"]);
+const libreOfficeOnlyTargets = new Set(["doc", "pptx", "odt", "ods", "odp"]);
 const readable = new Set([
   "txt", "md", "html", "htm", "csv", "tsv", "rtf", "doc", "docx", "ppt", "pptx", "xlsx", "xls", "odt", "ods", "odp", "pdf",
   ...imageInputs, ...audioInputs, ...videoInputs
@@ -470,6 +472,12 @@ function isSupportedRoute(sourceExt, target) {
   return false;
 }
 
+function needsLibreOffice(sourceExt, target) {
+  if (!officeInputs.has(sourceExt) || !officeTargets.has(target)) return false;
+  if (!nativelyReadableOfficeInputs.has(sourceExt)) return true;
+  return libreOfficeOnlyTargets.has(target);
+}
+
 async function convertFile({ sourcePath, target, outputDir, conflictMode = "rename" }) {
   if (!sourcePath || !fs.existsSync(sourcePath)) throw new Error("找不到源文件。");
   const sourceExt = extname(sourcePath);
@@ -497,7 +505,7 @@ async function convertFile({ sourcePath, target, outputDir, conflictMode = "rena
     return { outPath, characters: 0, skipped: false };
   }
 
-  if (officeInputs.has(sourceExt) && officeTargets.has(normalizedTarget)) {
+  if (needsLibreOffice(sourceExt, normalizedTarget)) {
     await convertWithLibreOffice(sourcePath, outPath, normalizedTarget);
     return { outPath, characters: 0, skipped: false };
   }
