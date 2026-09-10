@@ -550,6 +550,493 @@
       display: none;
     }
 
+    #otherToolsPanel {
+      display: none;
+      --other-tools-left: 260px;
+      width: min(980px, calc(100% - 28px));
+      padding-left: calc(var(--other-tools-left) + (100% - var(--other-tools-left)) * 0.125);
+      box-sizing: border-box;
+      margin: 0 auto;
+      animation: panel-in 220ms ease both;
+    }
+
+    body[data-tool="other"] #otherToolsPanel {
+      display: block;
+    }
+
+    body[data-tool="other"] .hero {
+      min-height: 112px;
+      margin-bottom: 10px;
+    }
+
+    body[data-tool="other"] #otherToolsPanel {
+      margin-top: 0;
+    }
+
+    .other-tool-card {
+      position: relative;
+      min-width: 0;
+      aspect-ratio: 5 / 3;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 88% 18%, rgba(114, 232, 255, 0.12), transparent 30%),
+        rgba(24, 29, 43, 0.62);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .other-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .other-tool-card.empty {
+      background:
+        linear-gradient(145deg, rgba(24, 29, 43, 0.54), rgba(17, 22, 34, 0.4)),
+        rgba(24, 29, 43, 0.42);
+      border-style: dashed;
+      opacity: 0.78;
+    }
+
+    .other-tool-card.regex-card {
+      cursor: pointer;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .other-tool-card.regex-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(114, 232, 255, 0.42);
+      background:
+        radial-gradient(circle at 88% 18%, rgba(114, 232, 255, 0.18), transparent 30%),
+        rgba(24, 29, 43, 0.72);
+    }
+
+    .regex-card-mark {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(114, 232, 255, 0.3);
+      border-radius: 14px;
+      color: var(--cyan);
+      background: rgba(114, 232, 255, 0.1);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .other-tool-card::after {
+      content: "";
+      position: absolute;
+      right: -42px;
+      bottom: -58px;
+      width: 170px;
+      height: 170px;
+      border: 1px solid rgba(216, 255, 105, 0.2);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .other-tool-card h3 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .other-tool-card-content {
+      display: flex;
+      height: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .move-modal {
+      width: min(620px, calc(100vw - 34px));
+      max-height: min(720px, calc(100vh - 44px));
+      overflow: hidden auto;
+    }
+
+    .move-modal .modal-body {
+      display: grid;
+      gap: 16px;
+    }
+
+    .regex-modal {
+      width: min(850px, calc(100vw - 34px));
+      max-height: min(760px, calc(100vh - 44px));
+      overflow: hidden auto;
+    }
+
+    .regex-modal .modal-body {
+      display: grid;
+      gap: 14px;
+    }
+
+    .regex-toolbar,
+    .regex-options {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .regex-pattern {
+      flex: 1 1 460px;
+      min-width: 0;
+      font-family: Consolas, "Cascadia Code", monospace;
+    }
+
+    .regex-flags {
+      width: 120px;
+      flex: 0 0 120px;
+      font-family: Consolas, "Cascadia Code", monospace;
+    }
+
+    .regex-example {
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 10px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+      font-size: 12px;
+    }
+
+    .regex-example:hover {
+      color: var(--text);
+      background: rgba(170, 161, 255, 0.14);
+    }
+
+    .regex-example.active {
+      color: #10131a;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--lime), var(--lime-2));
+      box-shadow: 0 8px 20px rgba(216, 255, 105, 0.16);
+    }
+
+    .regex-editor-label {
+      margin: 0;
+    }
+
+    .regex-test-input {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      outline: none;
+      color: var(--text);
+      background: rgba(8, 11, 17, 0.58);
+      font: 13px/1.65 Consolas, "Cascadia Code", monospace;
+    }
+
+    .regex-test-input:focus,
+    .regex-pattern:focus,
+    .regex-flags:focus,
+    .regex-replace-input:focus {
+      border-color: rgba(114, 232, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(114, 232, 255, 0.08);
+    }
+
+    .regex-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .regex-summary strong {
+      color: var(--cyan);
+    }
+
+    .regex-results {
+      display: grid;
+      gap: 8px;
+      max-height: 180px;
+      overflow: auto;
+    }
+
+    .regex-result {
+      padding: 10px 12px;
+      border: 1px solid rgba(199, 210, 255, 0.14);
+      border-radius: 10px;
+      color: #dce2f3;
+      background: rgba(8, 11, 17, 0.4);
+      font: 12px/1.5 Consolas, "Cascadia Code", monospace;
+    }
+
+    .regex-result em {
+      color: var(--lime);
+      font-style: normal;
+    }
+
+    .regex-replace-input {
+      height: 40px;
+      font-family: Consolas, "Cascadia Code", monospace;
+    }
+
+    .regex-replace-preview {
+      min-height: 42px;
+      max-height: 110px;
+      overflow: auto;
+      padding: 10px 12px;
+      border: 1px solid rgba(199, 210, 255, 0.14);
+      border-radius: 10px;
+      white-space: pre-wrap;
+      color: #dce2f3;
+      background: rgba(8, 11, 17, 0.4);
+      font: 12px/1.5 Consolas, "Cascadia Code", monospace;
+    }
+
+    .regex-error {
+      color: #ffb2c0;
+    }
+
+    .utility-card {
+      cursor: pointer;
+    }
+
+    .utility-card .regex-card-mark {
+      color: var(--lime);
+      border-color: rgba(216, 255, 105, 0.3);
+      background: rgba(216, 255, 105, 0.1);
+    }
+
+    .utility-modal {
+      width: min(850px, calc(100vw - 34px));
+      max-height: min(760px, calc(100vh - 44px));
+      overflow: hidden auto;
+    }
+
+    .utility-modal .modal-body {
+      display: grid;
+      gap: 14px;
+    }
+
+    .utility-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .utility-toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .utility-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .utility-textarea {
+      width: 100%;
+      min-height: 180px;
+      resize: vertical;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      color: var(--text);
+      background: rgba(8, 11, 17, 0.58);
+      font: 13px/1.65 Consolas, "Cascadia Code", monospace;
+    }
+
+    .utility-textarea:focus,
+    .utility-select:focus {
+      border-color: rgba(114, 232, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(114, 232, 255, 0.08);
+    }
+
+    .utility-select {
+      width: auto;
+      min-width: 126px;
+      height: 36px;
+    }
+
+    .utility-toolbar .custom-select {
+      width: auto;
+      min-width: 142px;
+    }
+
+    .utility-toolbar .custom-select-trigger {
+      height: 36px;
+      font-size: 12px;
+    }
+
+    .utility-toolbar .custom-select-trigger::after {
+      top: 6px;
+    }
+
+    .utility-action {
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .utility-action:hover {
+      background: rgba(170, 161, 255, 0.16);
+      border-color: rgba(170, 161, 255, 0.35);
+    }
+
+    .utility-action.primary-action {
+      color: #10131a;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--lime), var(--lime-2));
+      font-weight: 800;
+    }
+
+    .utility-action.active-action {
+      color: #10131a;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--lime), var(--lime-2));
+      box-shadow: 0 8px 20px rgba(216, 255, 105, 0.16);
+      font-weight: 800;
+    }
+
+    .utility-output {
+      min-height: 180px;
+      max-height: 310px;
+      overflow: auto;
+      padding: 13px;
+      border: 1px solid rgba(199, 210, 255, 0.14);
+      border-radius: 12px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #dce2f3;
+      background: rgba(8, 11, 17, 0.42);
+      font: 13px/1.65 Consolas, "Cascadia Code", monospace;
+    }
+
+    .utility-status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .utility-status.error {
+      color: #ffb2c0;
+    }
+
+    .json-output {
+      white-space: pre;
+    }
+
+    .json-key { color: #9fc6ff; }
+    .json-string { color: #b8f58d; }
+    .json-number { color: #ffd580; }
+    .json-boolean { color: #e4a6ff; }
+    .json-null { color: #98a2bc; }
+
+
+    .move-field label {
+      margin-bottom: 7px;
+    }
+
+    .move-path {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .move-path input {
+      min-width: 0;
+    }
+
+    .move-path button {
+      height: 42px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .move-path button:hover {
+      background: rgba(170, 161, 255, 0.16);
+      border-color: rgba(170, 161, 255, 0.35);
+    }
+
+    .move-hint {
+      margin: 0;
+      color: var(--dim);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .move-status {
+      min-height: 42px;
+      padding: 11px 13px;
+      border: 1px solid rgba(199, 210, 255, 0.14);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(8, 11, 17, 0.35);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .move-status.ok {
+      color: var(--ok);
+      border-color: rgba(216, 255, 105, 0.3);
+    }
+
+    .move-status.error {
+      color: #ffb2c0;
+      border-color: rgba(255, 109, 138, 0.35);
+    }
+
+    .move-progress {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .move-progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--lime));
+      transition: width 220ms ease;
+    }
+
+    @keyframes panel-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .move-path { grid-template-columns: 1fr; }
+      .move-path button { width: 100%; }
+      #otherToolsPanel {
+        --other-tools-left: 150px;
+      }
+      .other-tools-grid {
+        grid-template-columns: 1fr;
+      }
+      .other-tool-card {
+        aspect-ratio: 5 / 3;
+      }
+    }
+
     .section-head {
       display: flex;
       align-items: center;
@@ -1051,6 +1538,11 @@
       z-index: 2;
       pointer-events: auto;
       -webkit-app-region: no-drag;
+      flex: 0 0 38px;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      margin: -4px -4px -4px 8px;
     }
 
     .modal-head h3 {
@@ -1207,6 +1699,9 @@
       }
       .hero-work {
         width: 100%;
+      }
+      #otherToolsPanel {
+        --other-tools-left: 150px;
       }
       .hero-title {
         width: 87.5%;
@@ -1383,6 +1878,39 @@
           </div>
         </section>
 
+        <section id="otherToolsPanel" aria-hidden="true">
+          <div class="other-tools-grid">
+            <article id="moveFolderBtn" class="other-tool-card regex-card" tabindex="0" role="button" aria-label="打开文件迁移工具">
+              <div class="other-tool-card-content">
+                <div class="regex-card-mark">⇄</div>
+                <h3>文件迁移工具</h3>
+                <span class="move-hint">迁移文件夹、保留原路径访问</span>
+              </div>
+            </article>
+            <article id="regexToolCard" class="other-tool-card regex-card" tabindex="0" role="button" aria-label="打开正则表达式工具">
+              <div class="other-tool-card-content">
+                <div class="regex-card-mark">.*</div>
+                <h3>正则表达式工具</h3>
+                <span class="move-hint">实时测试、捕获组与替换预览</span>
+              </div>
+            </article>
+            <article id="base64ToolCard" class="other-tool-card regex-card utility-card" tabindex="0" role="button" aria-label="打开 Base64 和 URL 编解码器">
+              <div class="other-tool-card-content">
+                <div class="regex-card-mark">64</div>
+                <h3>编解码器</h3>
+                <span class="move-hint">支持 UTF-8、Base64 和 Base64URL</span>
+              </div>
+            </article>
+            <article id="jsonToolCard" class="other-tool-card regex-card utility-card" tabindex="0" role="button" aria-label="打开 JSON 格式化工具">
+              <div class="other-tool-card-content">
+                <div class="regex-card-mark">{ }</div>
+                <h3>JSON 格式化工具</h3>
+                <span class="move-hint">格式化、压缩、校验与语法高亮</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
         <section class="assistant-card">
           <div class="assistant-figure" aria-hidden="true">
             <img id="assistantMood" src="../assets/assistant-states/idle.png" alt="">
@@ -1512,6 +2040,135 @@
         </div>
       </section>
     </div>
+
+    <div id="moveFolderModal" class="modal-backdrop" aria-hidden="true">
+      <section class="settings-modal move-modal" role="dialog" aria-modal="true" aria-labelledby="moveFolderTitle">
+        <div class="modal-head">
+          <h3 id="moveFolderTitle">文件迁移工具</h3>
+          <button class="icon-btn" id="moveFolderCloseBtn" type="button" aria-label="关闭文件迁移工具" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="move-field">
+            <label for="moveSourceInput">源文件夹</label>
+            <div class="move-path">
+              <input id="moveSourceInput" placeholder="选择要迁移的文件夹" readonly />
+              <button id="moveSourceBtn" type="button">选择文件夹</button>
+            </div>
+          </div>
+          <div class="move-field">
+            <label for="moveDestinationInput">目标位置</label>
+            <div class="move-path">
+              <input id="moveDestinationInput" placeholder="选择新的存储位置" readonly />
+              <button id="moveDestinationBtn" type="button">选择位置</button>
+            </div>
+          </div>
+          <p class="move-hint">目标位置下会自动创建与源文件夹同名的目录。迁移需要管理员权限，系统目录不会被允许操作。</p>
+          <div class="setting-row">
+            <div>
+              <strong>隐藏原位置链接</strong>
+              <p>迁移完成后隐藏原路径上的目录链接。</p>
+            </div>
+            <button id="moveHideToggle" class="switch" type="button" aria-label="隐藏原位置链接"></button>
+          </div>
+          <div class="move-progress" aria-label="迁移进度">
+            <div id="moveProgressFill" class="move-progress-fill"></div>
+          </div>
+          <div id="moveStatus" class="move-status" role="status">请选择源文件夹和目标位置。</div>
+        </div>
+        <div class="modal-actions">
+          <button id="moveFolderStartBtn" class="primary" type="button">开始迁移</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="regexModal" class="modal-backdrop" aria-hidden="true">
+      <section class="settings-modal regex-modal" role="dialog" aria-modal="true" aria-labelledby="regexTitle">
+        <div class="modal-head">
+          <h3 id="regexTitle">正则表达式工具</h3>
+          <button class="icon-btn" id="regexCloseBtn" type="button" aria-label="关闭正则表达式工具" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="regex-toolbar">
+            <input id="regexPatternInput" class="regex-pattern" value="(\w+)@(\w+\.\w+)" spellcheck="false" aria-label="正则表达式">
+            <input id="regexFlagsInput" class="regex-flags" value="gi" spellcheck="false" aria-label="正则标志">
+          </div>
+          <div class="regex-options">
+            <button class="regex-example" type="button" data-regex-example="email">邮箱</button>
+            <button class="regex-example" type="button" data-regex-example="url">网址</button>
+            <button class="regex-example" type="button" data-regex-example="number">数字</button>
+            <button class="regex-example" type="button" data-regex-example="date">日期</button>
+          </div>
+          <label class="regex-editor-label" for="regexTestInput">测试文本</label>
+          <textarea id="regexTestInput" class="regex-test-input" spellcheck="false">联系 alice@example.com 或 bob@example.org</textarea>
+          <div class="regex-summary">
+            <span id="regexMatchSummary">匹配 0 项</span>
+            <span>JavaScript RegExp</span>
+          </div>
+          <div id="regexResults" class="regex-results"></div>
+          <div>
+            <label for="regexReplaceInput">替换预览</label>
+            <input id="regexReplaceInput" class="regex-replace-input" value="$1 [at] $2" spellcheck="false">
+            <div id="regexReplacePreview" class="regex-replace-preview"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="base64Modal" class="modal-backdrop" aria-hidden="true">
+      <section class="settings-modal utility-modal" role="dialog" aria-modal="true" aria-labelledby="base64Title">
+        <div class="modal-head">
+          <h3 id="base64Title">编解码器</h3>
+          <button class="icon-btn" id="base64CloseBtn" type="button" aria-label="关闭编解码器" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="utility-toolbar">
+            <div class="utility-toolbar-group">
+              <button id="base64EncodeBtn" class="utility-action primary-action" type="button">编码</button>
+              <button id="base64DecodeBtn" class="utility-action" type="button">解码</button>
+              <select id="base64ModeSelect" class="utility-select" aria-label="编码模式">
+                <option value="base64">Base64</option>
+                <option value="base64url">Base64URL</option>
+                <option value="url">URL 编码</option>
+              </select>
+            </div>
+            <button id="base64SwapBtn" class="utility-action" type="button">交换输入输出</button>
+          </div>
+          <label class="utility-label" for="base64Input">输入内容</label>
+          <textarea id="base64Input" class="utility-textarea" spellcheck="false">你好，Acacia Flow！</textarea>
+          <label class="utility-label" for="base64Output">输出结果</label>
+          <div id="base64Output" class="utility-output"></div>
+          <div id="base64Status" class="utility-status">UTF-8 文本可直接编码，结果完全在本地处理。</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="jsonModal" class="modal-backdrop" aria-hidden="true">
+      <section class="settings-modal utility-modal" role="dialog" aria-modal="true" aria-labelledby="jsonTitle">
+        <div class="modal-head">
+          <h3 id="jsonTitle">JSON 格式化工具</h3>
+          <button class="icon-btn" id="jsonCloseBtn" type="button" aria-label="关闭 JSON 格式化工具" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="utility-toolbar">
+            <div class="utility-toolbar-group">
+              <button id="jsonFormatBtn" class="utility-action primary-action" type="button">格式化</button>
+              <button id="jsonMinifyBtn" class="utility-action" type="button">压缩</button>
+              <button id="jsonCopyBtn" class="utility-action" type="button">复制结果</button>
+            </div>
+            <select id="jsonIndentSelect" class="utility-select" aria-label="缩进宽度">
+              <option value="2">2 个空格</option>
+              <option value="4">4 个空格</option>
+              <option value="tab">Tab 缩进</option>
+            </select>
+          </div>
+          <label class="utility-label" for="jsonInput">JSON 输入</label>
+          <textarea id="jsonInput" class="utility-textarea" spellcheck="false">{"name":"Acacia","formats":["jpg","png","pdf"],"settings":{"offline":true,"version":1}}</textarea>
+          <label class="utility-label" for="jsonOutput">格式化结果</label>
+          <div id="jsonOutput" class="utility-output json-output"></div>
+          <div id="jsonStatus" class="utility-status">粘贴 JSON 后点击“格式化”，工具会检查语法并进行高亮。</div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script src="./vendor/mammoth.browser.min.js"></script>
@@ -1570,7 +2227,7 @@
       },
       other: {
         title: "其他 <span>工具</span>",
-        note: "表格、文本和跨格式转换都可以从这里开始",
+        note: "使用独立工具处理文件夹和系统级文件操作",
         accept: ".txt,.md,.html,.csv,.tsv,.rtf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp,.pdf,.jpg,.jpeg,.png,.webp,.gif,.avif,.tif,.tiff,.bmp,.mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.wma,.mp4,.mov,.mkv,.webm,.avi,.m4v,.wmv,.flv",
         tags: [],
         targets: ["pdf", "txt", "md", "html", "csv", "rtf", "docx", "doc", "xlsx", "xls", "jpg", "png", "mp4", "mp3"]
@@ -1598,6 +2255,47 @@
     const advancedBtn = document.getElementById("advancedBtn");
     const advancedModal = document.getElementById("advancedModal");
     const advancedCloseBtn = document.getElementById("advancedCloseBtn");
+    const moveFolderBtn = document.getElementById("moveFolderBtn");
+    const moveFolderModal = document.getElementById("moveFolderModal");
+    const moveFolderCloseBtn = document.getElementById("moveFolderCloseBtn");
+    const moveSourceInput = document.getElementById("moveSourceInput");
+    const moveSourceBtn = document.getElementById("moveSourceBtn");
+    const moveDestinationInput = document.getElementById("moveDestinationInput");
+    const moveDestinationBtn = document.getElementById("moveDestinationBtn");
+    const moveHideToggle = document.getElementById("moveHideToggle");
+    const moveFolderStartBtn = document.getElementById("moveFolderStartBtn");
+    const moveProgressFill = document.getElementById("moveProgressFill");
+    const moveStatus = document.getElementById("moveStatus");
+    const regexToolCard = document.getElementById("regexToolCard");
+    const regexModal = document.getElementById("regexModal");
+    const regexCloseBtn = document.getElementById("regexCloseBtn");
+    const regexPatternInput = document.getElementById("regexPatternInput");
+    const regexFlagsInput = document.getElementById("regexFlagsInput");
+    const regexTestInput = document.getElementById("regexTestInput");
+    const regexReplaceInput = document.getElementById("regexReplaceInput");
+    const regexMatchSummary = document.getElementById("regexMatchSummary");
+    const regexResults = document.getElementById("regexResults");
+    const regexReplacePreview = document.getElementById("regexReplacePreview");
+    const base64ToolCard = document.getElementById("base64ToolCard");
+    const base64Modal = document.getElementById("base64Modal");
+    const base64CloseBtn = document.getElementById("base64CloseBtn");
+    const base64Input = document.getElementById("base64Input");
+    const base64Output = document.getElementById("base64Output");
+    const base64Status = document.getElementById("base64Status");
+    const base64ModeSelect = document.getElementById("base64ModeSelect");
+    const base64EncodeBtn = document.getElementById("base64EncodeBtn");
+    const base64DecodeBtn = document.getElementById("base64DecodeBtn");
+    const base64SwapBtn = document.getElementById("base64SwapBtn");
+    const jsonToolCard = document.getElementById("jsonToolCard");
+    const jsonModal = document.getElementById("jsonModal");
+    const jsonCloseBtn = document.getElementById("jsonCloseBtn");
+    const jsonInput = document.getElementById("jsonInput");
+    const jsonOutput = document.getElementById("jsonOutput");
+    const jsonStatus = document.getElementById("jsonStatus");
+    const jsonIndentSelect = document.getElementById("jsonIndentSelect");
+    const jsonFormatBtn = document.getElementById("jsonFormatBtn");
+    const jsonMinifyBtn = document.getElementById("jsonMinifyBtn");
+    const jsonCopyBtn = document.getElementById("jsonCopyBtn");
     const conflictMode = document.getElementById("conflictMode");
     const openFolderToggle = document.getElementById("openFolderToggle");
     const clearCompletedToggle = document.getElementById("clearCompletedToggle");
@@ -1621,6 +2319,8 @@
     let singleFileRunStreak = 0;
     let assistantMoodToken = 0;
     let currentAssistantMood = "idle";
+    let moveHideOriginal = false;
+    let moveInProgress = false;
     const defaultAdvancedSettings = {
       conflictMode: "rename",
       openOutputFolder: false,
@@ -1758,7 +2458,12 @@
     }
 
     const targetCustomSelect = enhanceSelect(targetFormat);
-    const customSelects = [targetCustomSelect, enhanceSelect(qualityMode)];
+    const customSelects = [
+      targetCustomSelect,
+      enhanceSelect(qualityMode),
+      enhanceSelect(base64ModeSelect),
+      enhanceSelect(jsonIndentSelect)
+    ];
     document.addEventListener("click", () => customSelects.forEach(select => select.close()));
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") customSelects.forEach(select => select.close());
@@ -1793,6 +2498,7 @@
       const profile = toolProfiles[category] || toolProfiles.all;
       activeCategory = category;
       document.body.dataset.tool = category;
+      document.getElementById("otherToolsPanel")?.setAttribute("aria-hidden", category === "other" ? "false" : "true");
       heroTitle.innerHTML = profile.title;
       heroNote.textContent = profile.note;
       fileInput.accept = profile.accept;
@@ -1970,6 +2676,230 @@
       }, 180);
     }
 
+    function openMoveFolderModal() {
+      setMoveStatus("请选择源文件夹和目标位置。", "idle", 0);
+      moveFolderModal.classList.add("open");
+      moveFolderModal.classList.remove("closing");
+      moveFolderModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeMoveFolderModal() {
+      if (moveInProgress) {
+        setMoveStatus("正在迁移中，完成后再关闭窗口。", "error");
+        return;
+      }
+      moveFolderModal.classList.add("closing");
+      window.setTimeout(() => {
+        moveFolderModal.classList.remove("open", "closing");
+        moveFolderModal.setAttribute("aria-hidden", "true");
+      }, 180);
+    }
+
+    function openRegexModal() {
+      regexModal.classList.add("open");
+      regexModal.classList.remove("closing");
+      regexModal.setAttribute("aria-hidden", "false");
+      updateRegexResults();
+    }
+
+    function closeRegexModal() {
+      regexModal.classList.add("closing");
+      window.setTimeout(() => {
+        regexModal.classList.remove("open", "closing");
+        regexModal.setAttribute("aria-hidden", "true");
+      }, 180);
+    }
+
+    function openUtilityModal(modal) {
+      modal.classList.add("open");
+      modal.classList.remove("closing");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeUtilityModal(modal) {
+      modal.classList.add("closing");
+      window.setTimeout(() => {
+        modal.classList.remove("open", "closing");
+        modal.setAttribute("aria-hidden", "true");
+      }, 180);
+    }
+
+    function utf8ToBase64(value) {
+      const bytes = new TextEncoder().encode(value);
+      let binary = "";
+      for (let index = 0; index < bytes.length; index += 1) binary += String.fromCharCode(bytes[index]);
+      return btoa(binary);
+    }
+
+    function base64ToUtf8(value) {
+      const normalized = value.replace(/\s+/g, "");
+      const binary = atob(normalized);
+      const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+      return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    }
+
+    function updateBase64(action = "encode") {
+      const mode = base64ModeSelect.value;
+      base64EncodeBtn.classList.toggle("active-action", action === "encode");
+      base64DecodeBtn.classList.toggle("active-action", action === "decode");
+      base64EncodeBtn.classList.toggle("primary-action", action === "encode");
+      base64DecodeBtn.classList.toggle("primary-action", action === "decode");
+      try {
+        let result = "";
+        if (action === "encode") {
+          if (mode === "url") result = encodeURIComponent(base64Input.value);
+          else {
+            result = utf8ToBase64(base64Input.value);
+            if (mode === "base64url") result = result.replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+          }
+          base64Output.textContent = result;
+          base64Status.textContent = `编码完成 · ${mode === "url" ? "URL 编码" : mode === "base64url" ? "Base64URL" : "Base64"}`;
+        } else {
+          if (mode === "url") result = decodeURIComponent(base64Input.value);
+          else {
+            let normalized = base64Input.value.replaceAll("-", "+").replaceAll("_", "/");
+            normalized += "=".repeat((4 - normalized.length % 4) % 4);
+            result = base64ToUtf8(normalized);
+          }
+          base64Output.textContent = result;
+          base64Status.textContent = `解码完成 · ${mode === "url" ? "URL 编码" : mode === "base64url" ? "Base64URL" : "Base64"}`;
+        }
+        base64Status.classList.remove("error");
+      } catch (error) {
+        base64Output.textContent = "";
+        base64Status.textContent = `内容无法解码：${error.message || "格式无效"}`;
+        base64Status.classList.add("error");
+      }
+    }
+
+    function escapeJsonHtml(value) {
+      return escapeHtml(value)
+        .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, '<span class="json-key">$1</span>$2')
+        .replace(/:\s*("(?:\\.|[^"\\])*")/g, ': <span class="json-string">$1</span>')
+        .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+        .replace(/\b(null)\b/g, '<span class="json-null">$1</span>')
+        .replace(/(?<!["\w])(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(?!["\w])/g, '<span class="json-number">$1</span>');
+    }
+
+    function updateJson(mode = "format") {
+      jsonFormatBtn.classList.toggle("active-action", mode === "format");
+      jsonMinifyBtn.classList.toggle("active-action", mode === "minify");
+      jsonFormatBtn.classList.toggle("primary-action", mode === "format");
+      jsonMinifyBtn.classList.toggle("primary-action", mode === "minify");
+      try {
+        const parsed = JSON.parse(jsonInput.value);
+        const indent = jsonIndentSelect.value === "tab" ? "\t" : Number(jsonIndentSelect.value);
+        const formatted = mode === "minify" ? JSON.stringify(parsed) : JSON.stringify(parsed, null, indent);
+        jsonOutput.innerHTML = escapeJsonHtml(formatted);
+        jsonStatus.textContent = mode === "minify" ? "JSON 已压缩并通过语法校验。" : "JSON 格式正确，已完成格式化。";
+        jsonStatus.classList.remove("error");
+      } catch (error) {
+        jsonOutput.textContent = "";
+        jsonStatus.textContent = `JSON 格式错误：${error.message || "无法解析"}`;
+        jsonStatus.classList.add("error");
+      }
+    }
+
+    function setRegexExampleActive(key) {
+      document.querySelectorAll("[data-regex-example]").forEach(button => {
+        button.classList.toggle("active", button.dataset.regexExample === key);
+      });
+    }
+
+    function buildRegex() {
+      const pattern = regexPatternInput.value;
+      let flags = regexFlagsInput.value.replace(/[^dgimsuvy]/g, "");
+      flags = [...new Set(flags.split(""))].join("");
+      regexFlagsInput.value = flags;
+      try {
+        return { regex: new RegExp(pattern, flags), error: "" };
+      } catch (error) {
+        return { regex: null, error: error.message || "正则表达式无效。" };
+      }
+    }
+
+    function updateRegexResults() {
+      const { regex, error } = buildRegex();
+      if (!regex) {
+        regexMatchSummary.innerHTML = `<span class="regex-error">${escapeHtml(error)}</span>`;
+        regexResults.replaceChildren();
+        regexReplacePreview.textContent = "请先修正正则表达式。";
+        return;
+      }
+
+      const source = regexTestInput.value;
+      const matches = [];
+      if (regex.global || regex.sticky) {
+        let match;
+        while ((match = regex.exec(source)) && matches.length < 500) {
+          matches.push(match);
+          if (match[0] === "") regex.lastIndex += 1;
+        }
+      } else {
+        const match = regex.exec(source);
+        if (match) matches.push(match);
+      }
+
+      regexMatchSummary.innerHTML = `匹配 <strong>${matches.length}</strong> 项`;
+      regexResults.replaceChildren(...matches.map((match, index) => {
+        const item = document.createElement("div");
+        item.className = "regex-result";
+        const groups = match.slice(1).map((group, groupIndex) =>
+          `捕获组 ${groupIndex + 1}: ${group === undefined ? "未参与" : escapeHtml(group)}`
+        ).join(" · ");
+        item.innerHTML = `<em>#${index + 1}</em> 位置 ${match.index}–${match.index + match[0].length}：${escapeHtml(match[0])}${groups ? `<br>${groups}` : ""}`;
+        return item;
+      }));
+
+      try {
+        regexReplacePreview.textContent = source.replace(regex, regexReplaceInput.value);
+      } catch (_error) {
+        regexReplacePreview.textContent = "替换预览不可用。";
+      }
+    }
+
+    const regexExamples = {
+      email: {
+        pattern: "(\\w+)@(\\w+\\.\\w+)",
+        flags: "gi",
+        text: "联系 alice@example.com 或 bob@example.org",
+        replace: "$1 [at] $2"
+      },
+      url: {
+        pattern: "https?://[^\\s]+",
+        flags: "gi",
+        text: "访问 https://example.com/path 和 http://acacia.local",
+        replace: "[链接]"
+      },
+      number: {
+        pattern: "\\b\\d+(?:\\.\\d+)?\\b",
+        flags: "g",
+        text: "价格 12.5 元，数量 3 件",
+        replace: "[数字]"
+      },
+      date: {
+        pattern: "(\\d{4})-(\\d{2})-(\\d{2})",
+        flags: "g",
+        text: "发布日期：2026-09-10",
+        replace: "$1/$2/$3"
+      }
+    };
+
+    function setMoveStatus(message, type = "idle", progress = null) {
+      moveStatus.textContent = message;
+      moveStatus.classList.toggle("ok", type === "ok");
+      moveStatus.classList.toggle("error", type === "error");
+      if (progress !== null) moveProgressFill.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+    }
+
+    function friendlyMoveError(error) {
+      const raw = String(error?.message || error || "迁移失败，请检查权限或路径。");
+      return raw
+        .replace(/^Error invoking remote method '[^']+':\s*/i, "")
+        .replace(/^Error:\s*/i, "")
+        .trim() || "迁移失败，请检查权限或路径。";
+    }
+
     function bindModalClose(button, closeModal) {
       const handler = event => {
         event.preventDefault();
@@ -1978,6 +2908,71 @@
       };
       button.addEventListener("click", handler);
       button.addEventListener("pointerup", handler);
+    }
+
+    async function chooseMoveSource() {
+      if (!window.acaciaFlow?.chooseMoveSource) {
+        setMoveStatus("当前运行环境缺少文件夹选择接口。", "error");
+        return;
+      }
+      const selected = await window.acaciaFlow.chooseMoveSource();
+      if (selected) {
+        moveSourceInput.value = selected;
+        setMoveStatus("源文件夹已选择，请继续选择目标位置。", "idle", 18);
+      }
+    }
+
+    async function chooseMoveDestination() {
+      if (!window.acaciaFlow?.chooseMoveDestination) {
+        setMoveStatus("当前运行环境缺少目标位置选择接口。", "error");
+        return;
+      }
+      const selected = await window.acaciaFlow.chooseMoveDestination();
+      if (selected) {
+        moveDestinationInput.value = selected;
+        setMoveStatus("目标位置已选择，可以开始迁移。", "idle", 28);
+      }
+    }
+
+    async function startMoveFolder() {
+      if (moveInProgress) return;
+      if (!moveSourceInput.value || !moveDestinationInput.value) {
+        setMoveStatus("请先选择源文件夹和目标位置。", "error");
+        return;
+      }
+      if (!window.acaciaFlow?.moveFolder) {
+        setMoveStatus("当前运行环境缺少文件夹迁移接口。", "error");
+        return;
+      }
+
+      moveInProgress = true;
+      moveFolderStartBtn.disabled = true;
+      moveSourceBtn.disabled = true;
+      moveDestinationBtn.disabled = true;
+      setMoveStatus("正在准备迁移，请保持软件打开。", "idle", 8);
+
+      const progressTimer = window.setInterval(() => {
+        const current = parseFloat(moveProgressFill.style.width) || 8;
+        if (current < 88) moveProgressFill.style.width = `${current + 4}%`;
+      }, 360);
+
+      try {
+        const result = await window.acaciaFlow.moveFolder({
+          sourcePath: moveSourceInput.value,
+          destinationRoot: moveDestinationInput.value,
+          hideOriginal: moveHideOriginal
+        });
+        window.clearInterval(progressTimer);
+        setMoveStatus(`迁移完成：原路径已链接到 ${result.destination}`, "ok", 100);
+      } catch (error) {
+        window.clearInterval(progressTimer);
+        setMoveStatus(friendlyMoveError(error), "error", 0);
+      } finally {
+        moveInProgress = false;
+        moveFolderStartBtn.disabled = false;
+        moveSourceBtn.disabled = false;
+        moveDestinationBtn.disabled = false;
+      }
     }
 
     async function loadAppSettings() {
@@ -2166,6 +3161,10 @@
     });
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") closeQueueDeleteMenu();
+      if (event.key === "Escape" && moveFolderModal.classList.contains("open")) closeMoveFolderModal();
+      if (event.key === "Escape" && regexModal.classList.contains("open")) closeRegexModal();
+      if (event.key === "Escape" && base64Modal.classList.contains("open")) closeUtilityModal(base64Modal);
+      if (event.key === "Escape" && jsonModal.classList.contains("open")) closeUtilityModal(jsonModal);
     });
     settingsBtn.addEventListener("click", openSettingsModal);
     bindModalClose(settingsCloseBtn, closeSettingsModal);
@@ -2176,6 +3175,98 @@
     bindModalClose(advancedCloseBtn, closeAdvancedModal);
     advancedModal.addEventListener("click", event => {
       if (event.target === advancedModal) closeAdvancedModal();
+    });
+    moveFolderBtn?.addEventListener("click", openMoveFolderModal);
+    moveFolderBtn?.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openMoveFolderModal();
+      }
+    });
+    bindModalClose(moveFolderCloseBtn, closeMoveFolderModal);
+    moveFolderModal.addEventListener("click", event => {
+      if (event.target === moveFolderModal) closeMoveFolderModal();
+    });
+    moveSourceBtn.addEventListener("click", chooseMoveSource);
+    moveDestinationBtn.addEventListener("click", chooseMoveDestination);
+    moveHideToggle.addEventListener("click", () => {
+      moveHideOriginal = !moveHideOriginal;
+      moveHideToggle.classList.toggle("active", moveHideOriginal);
+    });
+    moveFolderStartBtn.addEventListener("click", startMoveFolder);
+    regexToolCard?.addEventListener("click", openRegexModal);
+    regexToolCard?.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openRegexModal();
+      }
+    });
+    bindModalClose(regexCloseBtn, closeRegexModal);
+    regexModal.addEventListener("click", event => {
+      if (event.target === regexModal) closeRegexModal();
+    });
+    [regexPatternInput, regexFlagsInput, regexTestInput, regexReplaceInput].forEach(input => {
+      input.addEventListener("input", updateRegexResults);
+    });
+    document.querySelectorAll("[data-regex-example]").forEach(button => {
+      button.addEventListener("click", () => {
+        const example = regexExamples[button.dataset.regexExample];
+        if (!example) return;
+        setRegexExampleActive(button.dataset.regexExample);
+        regexPatternInput.value = example.pattern;
+        regexFlagsInput.value = example.flags;
+        regexTestInput.value = example.text;
+        regexReplaceInput.value = example.replace;
+        updateRegexResults();
+      });
+    });
+    function bindUtilityCard(card, open) {
+      card?.addEventListener("click", open);
+      card?.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          open();
+        }
+      });
+    }
+    bindUtilityCard(base64ToolCard, () => {
+      openUtilityModal(base64Modal);
+      updateBase64("encode");
+    });
+    bindUtilityCard(jsonToolCard, () => {
+      openUtilityModal(jsonModal);
+      updateJson("format");
+    });
+    bindModalClose(base64CloseBtn, () => closeUtilityModal(base64Modal));
+    bindModalClose(jsonCloseBtn, () => closeUtilityModal(jsonModal));
+    base64Modal.addEventListener("click", event => {
+      if (event.target === base64Modal) closeUtilityModal(base64Modal);
+    });
+    jsonModal.addEventListener("click", event => {
+      if (event.target === jsonModal) closeUtilityModal(jsonModal);
+    });
+    base64EncodeBtn.addEventListener("click", () => updateBase64("encode"));
+    base64DecodeBtn.addEventListener("click", () => updateBase64("decode"));
+    base64ModeSelect.addEventListener("change", () => updateBase64("encode"));
+    base64SwapBtn.addEventListener("click", () => {
+      const currentOutput = base64Output.textContent;
+      base64Output.textContent = base64Input.value;
+      base64Input.value = currentOutput;
+      updateBase64("decode");
+    });
+    jsonFormatBtn.addEventListener("click", () => updateJson("format"));
+    jsonMinifyBtn.addEventListener("click", () => updateJson("minify"));
+    jsonIndentSelect.addEventListener("change", () => updateJson("format"));
+    jsonCopyBtn.addEventListener("click", async () => {
+      const value = jsonOutput.textContent;
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        jsonStatus.textContent = "格式化结果已复制。";
+      } catch (_error) {
+        jsonStatus.textContent = "复制失败，请手动选择结果文本。";
+        jsonStatus.classList.add("error");
+      }
     });
     assistantMood.addEventListener("click", () => {
       if (currentAssistantMood === "working") return;

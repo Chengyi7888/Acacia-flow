@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, Tray, shell } = require("elec
 const fs = require("fs");
 const path = require("path");
 const { convertFile } = require("./converter");
+const { moveFolder } = require("./folder-mover");
 
 const appName = "Acacia Flow";
 const appRoot = app.getAppPath();
@@ -179,6 +180,24 @@ ipcMain.handle("open-path", async (_event, targetPath) => {
   if (!targetPath) return "missing";
   return shell.openPath(targetPath);
 });
+
+ipcMain.handle("choose-move-source", async () => {
+  const result = await dialog.showOpenDialog({
+    title: "选择要移动的文件夹",
+    properties: ["openDirectory"]
+  });
+  return result.canceled || !result.filePaths.length ? null : result.filePaths[0];
+});
+
+ipcMain.handle("choose-move-destination", async () => {
+  const result = await dialog.showOpenDialog({
+    title: "选择新的存储位置",
+    properties: ["openDirectory", "createDirectory"]
+  });
+  return result.canceled || !result.filePaths.length ? null : result.filePaths[0];
+});
+
+ipcMain.handle("move-folder", async (_event, payload) => moveFolder(payload || {}));
 
 ipcMain.on("window-control", (event, action) => {
   const win = BrowserWindow.fromWebContents(event.sender);
