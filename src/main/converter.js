@@ -76,6 +76,12 @@ function libreOfficePath() {
     process.env.ACACIA_LIBREOFFICE_PATH,
     process.resourcesPath && path.join(process.resourcesPath, "libreoffice", "program", "soffice.exe"),
     process.resourcesPath && path.join(process.resourcesPath, "libreoffice", "program", "soffice.com"),
+    process.resourcesPath && path.join(process.resourcesPath, "vendor", "libreoffice", "program", "soffice.exe"),
+    process.resourcesPath && path.join(process.resourcesPath, "vendor", "libreoffice", "program", "soffice.com"),
+    process.resourcesPath && path.join(process.resourcesPath, "app.asar.unpacked", "vendor", "libreoffice", "program", "soffice.exe"),
+    process.resourcesPath && path.join(process.resourcesPath, "app.asar.unpacked", "vendor", "libreoffice", "program", "soffice.com"),
+    path.join(__dirname, "..", "..", "vendor", "libreoffice", "program", "soffice.exe"),
+    path.join(__dirname, "..", "..", "vendor", "libreoffice", "program", "soffice.com"),
     path.join(__dirname, "..", "..", "bin", "libreoffice", "program", "soffice.exe"),
     path.join(__dirname, "..", "..", "bin", "libreoffice", "program", "soffice.com"),
     "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
@@ -378,6 +384,115 @@ async function writePdf(data, outPath) {
   }
 }
 
+function dataUrlToBuffer(dataUrl) {
+  return Buffer.from(String(dataUrl).split(",")[1] || "", "base64");
+}
+
+async function renderPdfPagesToImages(pdfPath, target) {
+  const vendorDir = path.join(__dirname, "..", "..", "web", "vendor");
+  const pdfModuleUrl = pathToFileUrl(path.join(vendorDir, "pdf.min.mjs"));
+  const workerModuleUrl = pathToFileUrl(path.join(vendorDir, "pdf.worker.min.mjs"));
+  const pdfBytes = (await fsp.readFile(pdfPath)).toString("base64");
+  const win = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  });
+  const html = `<!doctype html>
+    <meta charset="utf-8">
+    <style>html,body{margin:0;background:#fff}canvas{display:block}</style>
+    <script type="module">
+      import * as pdfjsLib from ${JSON.stringify(pdfModuleUrl)};
+      pdfjsLib.GlobalWorkerOptions.workerSrc = ${JSON.stringify(workerModuleUrl)};
+      window.__acaciaRenderPdf = async base64 => {
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        const pages = [];
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          const page = await pdf.getPage(pageNumber);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+          pages.push(canvas.toDataURL("image/png"));
+        }
+        return pages;
+      };
+    </script>`;
+  const tempHtml = path.join(os.tmpdir(), `acacia-pdf-render-${Date.now()}-${Math.random().toString(16).slice(2)}.html`);
+  await fsp.writeFile(tempHtml, html, "utf8");
+  try {
+    await win.loadFile(tempHtml);
+    await win.webContents.executeJavaScript("new Promise(resolve => { const wait = () => window.__acaciaRenderPdf ? resolve(true) : setTimeout(wait, 20); wait(); })");
+    const pageDataUrls = await win.webContents.executeJavaScript(`window.__acaciaRenderPdf(${JSON.stringify(pdfBytes)})`);
+    const extension = target === "jpg" ? "jpg" : target;
+    const pages = [];
+    for (const dataUrl of pageDataUrls) {
+      const pngBuffer = dataUrlToBuffer(dataUrl);
+      const image = sharp(pngBuffer);
+      let buffer = pngBuffer;
+      if (target === "jpg") buffer = await image.jpeg({ quality: 92, background: "#ffffff" }).flatten().toBuffer();
+      if (target === "webp") buffer = await image.webp({ quality: 92 }).toBuffer();
+      if (target === "tiff") buffer = await image.tiff({ compression: "lzw" }).toBuffer();
+      if (target === "bmp") {
+        const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+        const channels = info.channels >= 4 ? 4 : 3;
+        const rowBytes = info.width * channels;
+        const header = Buffer.alloc(54);
+        header.write("BM", 0, 2, "ascii");
+        header.writeUInt32LE(54 + data.length, 2);
+        header.writeUInt32LE(54, 10);
+        header.writeUInt32LE(40, 14);
+        header.writeInt32LE(info.width, 18);
+        header.writeInt32LE(-info.height, 22);
+        header.writeUInt16LE(1, 26);
+        header.writeUInt16LE(channels === 4 ? 32 : 24, 28);
+        header.writeUInt32LE(data.length, 34);
+        buffer = Buffer.concat([header, data.subarray(0, rowBytes * info.height)]);
+      }
+      pages.push({
+        buffer,
+        extension
+      });
+    }
+    return pages;
+  } finally {
+    win.destroy();
+    await fsp.rm(tempHtml, { force: true }).catch(() => {});
+  }
+}
+
+async function writeRenderedImages(data, outPath, target) {
+  const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), "acacia-render-image-"));
+  const tempPdf = path.join(tempDir, "render.pdf");
+  try {
+    await writePdf(data, tempPdf);
+    const pages = await renderPdfPagesToImages(tempPdf, target);
+    if (!pages.length) throw new Error("没有渲染出可用的页面。");
+    return writeImagePages(pages, outPath, target);
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+async function writeImagePages(pages, outPath, target) {
+  if (!pages.length) throw new Error("没有渲染出可用的页面。");
+  const outputExt = target === "jpg" ? "jpg" : target;
+  const base = outPath.replace(/\.[^.]+$/, "");
+  const outputs = [];
+  for (let index = 0; index < pages.length; index += 1) {
+    const pagePath = `${base}_page_${index + 1}.${outputExt}`;
+    await fsp.writeFile(pagePath, pages[index].buffer);
+    outputs.push(pagePath);
+  }
+  return outputs;
+}
+
 async function convertImage(sourcePath, outPath, target) {
   if (target === "pdf") {
     const pdf = await PDFDocument.create();
@@ -449,6 +564,15 @@ async function convertMedia(sourcePath, outPath, target) {
   }
 }
 
+async function convertVideoFrame(sourcePath, outPath, target) {
+  const args = [
+    "-hide_banner", "-loglevel", "error", "-y", "-i", sourcePath,
+    "-vf", "thumbnail,scale='min(1280,iw)':-2",
+    "-frames:v", "1", outPath
+  ];
+  await run(ffmpegPath(), args);
+}
+
 function categoryForExt(ext) {
   if (imageInputs.has(ext)) return "image";
   if (audioInputs.has(ext)) return "audio";
@@ -464,11 +588,11 @@ function isSupportedRoute(sourceExt, target) {
   const category = categoryForExt(sourceExt);
   if (category === "image") return imageTargets.has(target);
   if (category === "audio") return audioTargets.has(target);
-  if (category === "video") return audioTargets.has(target) || videoTargets.has(target);
-  if (category === "pdf") return ["txt", "md", "html", "docx", "pdf"].includes(target);
-  if (category === "spreadsheet") return ["txt", "md", "html", "csv", "xlsx", "xls", "pdf"].includes(target);
-  if (category === "document") return ["txt", "md", "html", "doc", "docx", "pdf", "rtf"].includes(target);
-  if (category === "text") return [...textTargets, "docx", "doc", "xlsx", "xls", "pdf"].includes(target);
+  if (category === "video") return audioTargets.has(target) || videoTargets.has(target) || ["jpg", "png"].includes(target);
+  if (category === "pdf") return ["txt", "md", "html", "docx", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+  if (category === "spreadsheet") return ["txt", "md", "html", "csv", "xlsx", "xls", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+  if (category === "document") return ["txt", "md", "html", "doc", "docx", "pdf", "rtf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+  if (category === "text") return [...textTargets, "docx", "doc", "xlsx", "xls", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
   return false;
 }
 
@@ -497,12 +621,28 @@ async function convertFile({ sourcePath, target, outputDir, conflictMode = "rena
     return { outPath, characters: 0, skipped: false };
   }
   if (category === "audio" || category === "video") {
+    if (category === "video" && ["jpg", "png"].includes(normalizedTarget)) {
+      await convertVideoFrame(sourcePath, outPath, normalizedTarget);
+      return { outPath, characters: 0, skipped: false };
+    }
     await convertMedia(sourcePath, outPath, normalizedTarget);
     return { outPath, characters: 0, skipped: false };
   }
   if (category === "pdf" && normalizedTarget === "pdf") {
     await copyPdf(sourcePath, outPath);
     return { outPath, characters: 0, skipped: false };
+  }
+
+  if (["jpg", "png", "webp", "tiff", "bmp"].includes(normalizedTarget) && ["pdf", "document", "spreadsheet", "text"].includes(category)) {
+    const outputSeed = path.join(folder, `${base}.${normalizedTarget}`);
+    if (category === "pdf") {
+      const pages = await renderPdfPagesToImages(sourcePath, normalizedTarget);
+      const pagePaths = await writeImagePages(pages, outputSeed, normalizedTarget);
+      return { outPath: pagePaths[0], outPaths: pagePaths, characters: 0, skipped: false };
+    }
+    const data = await extractSource(sourcePath);
+    const pagePaths = await writeRenderedImages(data, outputSeed, normalizedTarget);
+    return { outPath: pagePaths[0], outPaths: pagePaths, characters: sourceToText(data).length, skipped: false };
   }
 
   if (needsLibreOffice(sourceExt, normalizedTarget)) {

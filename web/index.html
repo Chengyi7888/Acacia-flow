@@ -2202,7 +2202,7 @@
         note: "使用本地 FFmpeg 转换视频，也可以导出 GIF",
         accept: ".mp4,.mov,.mkv,.webm,.avi,.m4v,.wmv,.flv",
         tags: ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a"],
-        targets: ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a"]
+        targets: ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a", "jpg", "png"]
       },
       audio: {
         title: "音频 <span>转换</span>",
@@ -2215,15 +2215,15 @@
         title: "PDF <span>转换</span>",
         note: "把文档、文本、表格、图片生成 PDF，也可提取 PDF 文本",
         accept: ".pdf,.txt,.md,.html,.csv,.tsv,.rtf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp,.jpg,.jpeg,.png,.webp,.gif,.avif,.tif,.tiff,.bmp",
-        tags: ["pdf", "txt", "md", "html", "docx"],
-        targets: ["pdf", "txt", "md", "html", "docx"]
+        tags: ["pdf", "txt", "md", "html", "docx", "jpg", "png", "webp"],
+        targets: ["pdf", "txt", "md", "html", "docx", "jpg", "png", "webp", "tiff", "bmp"]
       },
       document: {
         title: "文档 <span>转换</span>",
         note: "支持 Word、PowerPoint 和常见文本文档",
         accept: ".doc,.docx,.ppt,.pptx,.odt,.odp,.txt,.md,.html,.csv,.tsv,.rtf,.pdf",
-        tags: ["docx", "doc", "pdf", "txt", "md", "html", "csv", "rtf"],
-        targets: ["docx", "doc", "pdf", "txt", "md", "html", "csv", "rtf"]
+        tags: ["docx", "doc", "pdf", "txt", "md", "html", "csv", "rtf", "jpg", "png"],
+        targets: ["docx", "doc", "pdf", "txt", "md", "html", "csv", "rtf", "jpg", "png", "webp", "tiff", "bmp"]
       },
       other: {
         title: "其他 <span>工具</span>",
@@ -3098,12 +3098,12 @@
     function isSupportedRoute(sourceType, target) {
       const category = categoryForExt(sourceType);
       if (category === "image") return ["png", "jpg", "webp", "gif", "avif", "tiff", "bmp", "pdf"].includes(target);
-      if (category === "video") return ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a"].includes(target);
+      if (category === "video") return ["mp4", "mov", "mkv", "webm", "gif", "mp3", "wav", "m4a", "jpg", "png"].includes(target);
       if (category === "audio") return ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"].includes(target);
-      if (category === "pdf") return ["txt", "md", "html", "docx", "pdf"].includes(target);
-      if (category === "document") return ["txt", "md", "html", "doc", "docx", "pdf", "rtf"].includes(target);
-      if (category === "spreadsheet") return ["txt", "md", "html", "csv", "xlsx", "xls", "pdf"].includes(target);
-      if (category === "text") return ["txt", "md", "html", "csv", "rtf", "docx", "doc", "xlsx", "xls", "pdf"].includes(target);
+      if (category === "pdf") return ["txt", "md", "html", "docx", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+      if (category === "document") return ["txt", "md", "html", "doc", "docx", "pdf", "rtf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+      if (category === "spreadsheet") return ["txt", "md", "html", "csv", "xlsx", "xls", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+      if (category === "text") return ["txt", "md", "html", "csv", "rtf", "docx", "doc", "xlsx", "xls", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
       return false;
     }
 

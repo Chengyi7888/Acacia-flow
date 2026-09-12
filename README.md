@@ -28,7 +28,9 @@ After downloading, run the installer and launch Acacia Flow from the desktop sho
 
 Acacia Flow runs locally after installation. The app does not require Codex, ChatGPT, local developer plugins, or a cloud service to operate.
 
-FFmpeg is bundled for audio and video conversion. Some advanced Office document conversions may require LibreOffice to be installed on the user's computer; when LibreOffice is available, Acacia Flow can use it automatically for broader Office format support.
+FFmpeg and a portable LibreOffice runtime are bundled with the Windows installer. Advanced Office conversions such as DOC, PPT, and XLS workflows can run offline without asking the user to install additional plugins or applications.
+
+The portable Office runtime is stored in `vendor/libreoffice` for source builds and is copied into the packaged application's resources during installation.
 
 ## Supported Conversion Examples
 
@@ -37,6 +39,7 @@ FFmpeg is bundled for audio and video conversion. Some advanced Office document 
 - Image to PNG, JPG, WEBP, GIF, AVIF, TIFF, BMP, or PDF.
 - Audio to MP3, WAV, FLAC, M4A, AAC, OGG, OPUS, or WMA.
 - Video to MP4, MOV, MKV, WEBM, GIF, or common audio formats.
+- Legacy Office documents such as DOC, PPT, and XLS to PDF or image formats when using the bundled offline runtime.
 
 ## Project Structure
 
@@ -46,6 +49,7 @@ scripts/                Build and smoke-test scripts
 src/main/               Electron main process, preload script, and conversion engine
 web/                    User interface
 web/vendor/             Bundled browser-side libraries used by the app
+vendor/libreoffice/     Bundled portable Office conversion runtime
 package.json            App metadata and build configuration
 ```
 

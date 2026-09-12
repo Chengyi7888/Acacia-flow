@@ -29,6 +29,12 @@
       "node_modules/sharp/**/*",
       "node_modules/@img/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "vendor/libreoffice",
+        "to": "vendor/libreoffice"
+      }
+    ],
     "win": {
       "icon": "assets/acacia_flow.ico",
       "signAndEditExecutable": false,

@@ -10,6 +10,7 @@ electron-dist/
 *.exe
 !Acacia Flow Setup 0.1.0.exe
 *.blockmap
+vendor/libreoffice-download/
 
 # Runtime and test artifacts
 work/

@@ -67,6 +67,7 @@ async function main() {
 
   const checks = [
     ["text to pdf", txt, "pdf"],
+    ["text to png", txt, "png"],
     ["text to docx", txt, "docx"],
     ["text to xlsx", txt, "xlsx"],
     ["csv to xlsx", csv, "xlsx"],
@@ -74,11 +75,17 @@ async function main() {
     ["image to jpg", png, "jpg"],
     ["audio to mp3", wav, "mp3"],
     ["video to mp4", mp4, "mp4"],
-    ["video to mp3", mp4, "mp3"]
+    ["video to mp3", mp4, "mp3"],
+    ["video to png", mp4, "png"],
+    ["pdf to webp", null, "webp"],
+    ["pdf to tiff", null, "tiff"],
+    ["pdf to bmp", null, "bmp"],
+    ["spreadsheet to png", csv, "png"]
   ];
 
   const results = [];
   for (const [name, sourcePath, target] of checks) {
+    if (!sourcePath && name.startsWith("pdf to ")) continue;
     try {
       const result = await convertFile({ sourcePath, target, outputDir, conflictMode: "rename" });
       results.push({ name, target, path: result.outPath, ok: await exists(result.outPath) });
@@ -89,12 +96,42 @@ async function main() {
 
   const pdfResult = results.find(result => result.name === "text to pdf");
   const docxResult = results.find(result => result.name === "text to docx");
+  if (pdfResult?.path) {
+    for (const target of ["webp", "tiff", "bmp"]) {
+      try {
+        const result = await convertFile({ sourcePath: pdfResult.path, target, outputDir, conflictMode: "rename" });
+        results.push({ name: `pdf to ${target}`, target, path: result.outPath, ok: await exists(result.outPath) });
+      } catch (error) {
+        results.push({ name: `pdf to ${target}`, target, ok: false, error: String(error?.message || error) });
+      }
+    }
+    try {
+      const result = await convertFile({ sourcePath: pdfResult.path, target: "jpg", outputDir, conflictMode: "rename" });
+      results.push({ name: "pdf to jpg", target: "jpg", path: result.outPath, ok: await exists(result.outPath) });
+    } catch (error) {
+      results.push({ name: "pdf to jpg", target: "jpg", ok: false, error: String(error?.message || error) });
+    }
+  }
   if (docxResult?.path) {
+    try {
+      const result = await convertFile({ sourcePath: docxResult.path, target: "doc", outputDir, conflictMode: "rename" });
+      results.push({ name: "docx to doc", target: "doc", path: result.outPath, ok: await exists(result.outPath) });
+      const imageResult = await convertFile({ sourcePath: result.outPath, target: "jpg", outputDir, conflictMode: "rename" });
+      results.push({ name: "doc to jpg", target: "jpg", path: imageResult.outPath, ok: await exists(imageResult.outPath) });
+    } catch (error) {
+      results.push({ name: "docx to doc", target: "doc", ok: false, error: String(error?.message || error) });
+    }
     try {
       const result = await convertFile({ sourcePath: docxResult.path, target: "txt", outputDir, conflictMode: "rename" });
       results.push({ name: "docx to txt", target: "txt", path: result.outPath, ok: await exists(result.outPath) });
     } catch (error) {
       results.push({ name: "docx to txt", target: "txt", ok: false, error: String(error?.message || error) });
+    }
+    try {
+      const result = await convertFile({ sourcePath: docxResult.path, target: "png", outputDir, conflictMode: "rename" });
+      results.push({ name: "docx to png", target: "png", path: result.outPath, ok: await exists(result.outPath) });
+    } catch (error) {
+      results.push({ name: "docx to png", target: "png", ok: false, error: String(error?.message || error) });
     }
   }
 
