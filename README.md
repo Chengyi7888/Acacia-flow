@@ -38,16 +38,11 @@ The Windows installer includes the required conversion runtimes. Users do not ne
 
 The installer bundles FFmpeg and a portable LibreOffice runtime. File processing is performed locally; normal conversion workflows do not upload user files.
 
-### Build From Source
+### Source Code
 
-```text
-npm install
-npm run start
-npm run test:smoke
-npm run dist
-```
+The repository contains the complete application source code, bundled browser libraries, offline conversion engine, packaging scripts, and smoke-test scripts.
 
-The source tree contains `vendor/libreoffice`, which is copied into packaged application resources by the Electron Builder configuration.
+Most users should download the Windows installer from the [latest GitHub Release](https://github.com/Chengyi7888/Acacia-flow/releases/latest). No Node.js, npm package installation, FFmpeg installation, LibreOffice installation, or extra plugin is required for normal use.
 
 ### Project Layout
 
@@ -93,3 +88,9 @@ Acacia Flow 是一款面向 Windows 的本地文件格式转换软件，支持�
 ### 开源与许可
 
 本项目使用 MIT License。安装包中包含的第三方组件仍遵循其各自的许可协议。
+
+### 源代码
+
+仓库包含完整源代码、前端依赖、离线转换引擎、打包脚本和转换测试脚本。
+
+普通用户请直接前往 [GitHub Releases](https://github.com/Chengyi7888/Acacia-flow/releases/latest) 下载 Windows 安装包，不需要安装 Node.js、npm 依赖、FFmpeg、LibreOffice 或其它插件。

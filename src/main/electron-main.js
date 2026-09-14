@@ -18,14 +18,15 @@ const defaultSettings = {
   defaultOutputDir: "",
   wallpaperEnabled: true,
   animationsEnabled: true,
-  confirmBeforeConvert: false,
+  assistantEnabled: true,
   showDetailedErrors: true,
   rememberLastTool: true,
   advanced: {
     conflictMode: "rename",
     openOutputFolder: false,
     clearCompleted: false,
-    openOutputFile: false
+    openOutputFile: false,
+    onlyText: false
   }
 };
 
@@ -158,6 +159,7 @@ ipcMain.handle("choose-output-dir", async () => {
   });
   if (result.canceled || !result.filePaths.length) return null;
   outputDir = result.filePaths[0];
+  saveSettings({ ...settings, defaultOutputDir: outputDir });
   return outputDir;
 });
 

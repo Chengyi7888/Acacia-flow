@@ -16,7 +16,7 @@ const imageTargets = new Set(["png", "jpg", "webp", "gif", "avif", "tiff", "bmp"
 const audioInputs = new Set(["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"]);
 const videoInputs = new Set(["mp4", "mov", "mkv", "webm", "avi", "m4v", "wmv", "flv"]);
 const audioTargets = new Set(["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "wma"]);
-const videoTargets = new Set(["mp4", "mov", "mkv", "webm", "gif"]);
+const videoTargets = new Set(["mp4", "mov", "mkv", "webm", "avi", "m4v", "wmv", "flv", "gif"]);
 const officeInputs = new Set(["doc", "docx", "ppt", "pptx", "xls", "xlsx", "odt", "ods", "odp", "rtf"]);
 const officeTargets = new Set(["pdf", "doc", "docx", "pptx", "xlsx", "xls", "odt", "ods", "odp", "txt", "html", "rtf"]);
 const nativelyReadableOfficeInputs = new Set(["docx", "pptx", "xls", "xlsx", "rtf"]);
@@ -197,9 +197,25 @@ function tableToCsv(rows) {
 }
 
 function sourceToText(data) {
-  if (data.kind === "table") return cleanText(data.rows.map(row => row.join("\t")).join("\n"));
-  if (data.kind === "html") return cleanText(stripHtml(data.html));
-  return cleanText(data.text || "");
+  if (data.kind === "table") return String(data.rows.map(row => row.join("\t")).join("\n"))
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
+  if (data.kind === "html") return String(stripHtml(data.html))
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
+  return String(data.text || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
+}
+
+function tableToMarkdown(rows) {
+  if (!rows.length) return "";
+  const escaped = rows.map(row => row.map(cell => String(cell == null ? "" : cell).replaceAll("|", "\\|").replace(/\r?\n/g, "<br>")));
+  const columns = Math.max(...escaped.map(row => row.length), 1);
+  const fill = row => Array.from({ length: columns }, (_value, index) => row[index] || "");
+  const [header, ...body] = escaped.map(fill);
+  return [`| ${header.join(" | ")} |`, `| ${header.map(() => "---").join(" | ")} |`, ...body.map(row => `| ${row.join(" | ")} |`)].join("\n");
+}
+
+function tableToHtml(rows) {
+  const body = rows.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell == null ? "" : cell)}</td>`).join("")}</tr>`).join("\n");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:"Microsoft YaHei",Arial,sans-serif}td{border:1px solid #aeb6c7;padding:6px 9px;vertical-align:top}</style></head><body><table>${body}</table></body></html>`;
 }
 
 function sourceToRows(data) {
@@ -208,11 +224,24 @@ function sourceToRows(data) {
 
 function resolveOutputPath(folder, base, target, conflictMode = "rename") {
   const firstPath = path.join(folder, `${base}.${target}`);
-  if (conflictMode === "overwrite" || !fs.existsSync(firstPath)) return { outPath: firstPath, skipped: false };
+  const pathTaken = candidate => {
+    const candidateName = path.basename(candidate).toLowerCase();
+    try {
+      return fs.readdirSync(folder).some(name => name.toLowerCase() === candidateName);
+    } catch (_error) {
+      return fs.existsSync(candidate);
+    }
+  };
+  const pagePathTaken = candidate => pathTaken(candidate.replace(/\.[^.]+$/, `_page_1.${target}`));
+  if (conflictMode === "overwrite" || (!pathTaken(firstPath) && !pagePathTaken(firstPath))) {
+    return { outPath: firstPath, skipped: false };
+  }
   if (conflictMode === "skip") return { outPath: firstPath, skipped: true };
   for (let index = 1; index < 10000; index += 1) {
     const candidate = path.join(folder, `${base} (${index}).${target}`);
-    if (!fs.existsSync(candidate)) return { outPath: candidate, skipped: false };
+    if (!pathTaken(candidate) && !pagePathTaken(candidate)) {
+      return { outPath: candidate, skipped: false };
+    }
   }
   throw new Error("同名文件太多，无法自动重命名。");
 }
@@ -234,8 +263,8 @@ async function extractDocx(filePath) {
   return { kind: "text", text: cleanText(blocks.join("\n")) };
 }
 
-function extractXlsx(filePath) {
-  const workbook = XLSX.readFile(filePath, { cellDates: false });
+async function extractXlsx(filePath) {
+  const workbook = XLSX.read(await fsp.readFile(filePath), { type: "buffer", cellDates: false });
   const rows = [];
   workbook.SheetNames.forEach((sheetName, index) => {
     if (index > 0) rows.push([]);
@@ -296,7 +325,7 @@ async function extractSource(filePath) {
     }
   }
   if (ext === "docx") return extractDocx(filePath);
-  if (ext === "xlsx" || ext === "xls") return extractXlsx(filePath);
+  if (ext === "xlsx" || ext === "xls") return await extractXlsx(filePath);
   if (ext === "pptx") return extractPptx(filePath);
   if (ext === "pdf") return extractPdf(filePath);
   const text = decodeTextBuffer(await fsp.readFile(filePath));
@@ -309,11 +338,51 @@ async function extractSource(filePath) {
 
 function renderTextLike(data, target) {
   const text = sourceToText(data);
-  if (target === "txt" || target === "md") return text;
-  if (target === "html") return `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${escapeHtml(text)}</pre></body></html>`;
+  if (target === "txt") return text;
+  if (target === "md") return data.kind === "table" ? tableToMarkdown(data.rows) : text;
+  if (target === "html") return data.kind === "table" ? tableToHtml(data.rows) : `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${escapeHtml(text)}</pre></body></html>`;
   if (target === "csv") return tableToCsv(sourceToRows(data));
   if (target === "rtf") return `{\\rtf1\\ansi\\ansicpg65001\\deff0\n${text.replace(/[\\{}]/g, match => `\\${match}`).replace(/\r?\n/g, "\\par\n")}\n}`;
   throw new Error(`暂不支持导出为 ${target}`);
+}
+
+function encodeBmp(rawData, info) {
+  const rowBytes = Math.ceil(info.width * 3 / 4) * 4;
+  const pixels = Buffer.alloc(rowBytes * info.height);
+  for (let y = 0; y < info.height; y += 1) {
+    const sourceY = info.height - y - 1;
+    for (let x = 0; x < info.width; x += 1) {
+      const sourceOffset = (sourceY * info.width + x) * info.channels;
+      const targetOffset = y * rowBytes + x * 3;
+      pixels[targetOffset] = rawData[sourceOffset + 2] || 0;
+      pixels[targetOffset + 1] = rawData[sourceOffset + 1] || 0;
+      pixels[targetOffset + 2] = rawData[sourceOffset] || 0;
+    }
+  }
+  const header = Buffer.alloc(54);
+  header.write("BM", 0, 2, "ascii");
+  header.writeUInt32LE(54 + pixels.length, 2);
+  header.writeUInt32LE(54, 10);
+  header.writeUInt32LE(40, 14);
+  header.writeInt32LE(info.width, 18);
+  header.writeInt32LE(info.height, 22);
+  header.writeUInt16LE(1, 26);
+  header.writeUInt16LE(24, 28);
+  header.writeUInt32LE(pixels.length, 34);
+  return Buffer.concat([header, pixels]);
+}
+
+async function encodeBmpFromImage(input) {
+  const { data, info } = await sharp(input)
+    .flatten({ background: "#ffffff" })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return encodeBmp(data, {
+    width: info.width,
+    height: info.height,
+    channels: info.channels
+  });
 }
 
 async function writeDocx(data, outPath) {
@@ -384,11 +453,44 @@ async function writePdf(data, outPath) {
   }
 }
 
+async function writeSourcePdf(sourcePath, outPath) {
+  const ext = extname(sourcePath);
+  if (officeInputs.has(ext) && ext !== "docx" && ext !== "xlsx" && ext !== "xls" && ext !== "pptx" && ext !== "rtf") {
+    await convertWithLibreOffice(sourcePath, outPath, "pdf");
+    return;
+  }
+  if (["doc", "docx", "ppt", "pptx", "xls", "xlsx", "odt", "ods", "odp"].includes(ext)) {
+    await convertWithLibreOffice(sourcePath, outPath, "pdf");
+    return;
+  }
+  const source = await fsp.readFile(sourcePath);
+  const win = new BrowserWindow({ show: false, webPreferences: { offscreen: true } });
+  try {
+    if (ext === "html") {
+      const tempHtml = path.join(os.tmpdir(), `acacia-source-${Date.now()}-${Math.random().toString(16).slice(2)}.html`);
+      await fsp.writeFile(tempHtml, source);
+      await win.loadFile(tempHtml);
+      await fsp.writeFile(outPath, await win.webContents.printToPDF({ printBackground: true, pageSize: "A4" }));
+      await fsp.rm(tempHtml, { force: true }).catch(() => {});
+      return;
+    }
+    const text = decodeTextBuffer(source);
+    const html = `<!doctype html><meta charset="utf-8"><style>
+      @page{size:A4;margin:18mm}body{font-family:"Microsoft YaHei",Arial,sans-serif;
+      white-space:pre-wrap;word-break:break-word;line-height:1.6;margin:0}
+    </style><body>${escapeHtml(text)}</body>`;
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    await fsp.writeFile(outPath, await win.webContents.printToPDF({ printBackground: true, pageSize: "A4" }));
+  } finally {
+    win.destroy();
+  }
+}
+
 function dataUrlToBuffer(dataUrl) {
   return Buffer.from(String(dataUrl).split(",")[1] || "", "base64");
 }
 
-async function renderPdfPagesToImages(pdfPath, target) {
+async function renderPdfPagesToImages(pdfPath, target, scale = 1.5) {
   const vendorDir = path.join(__dirname, "..", "..", "web", "vendor");
   const pdfModuleUrl = pathToFileUrl(path.join(vendorDir, "pdf.min.mjs"));
   const workerModuleUrl = pathToFileUrl(path.join(vendorDir, "pdf.worker.min.mjs"));
@@ -407,14 +509,14 @@ async function renderPdfPagesToImages(pdfPath, target) {
     <script type="module">
       import * as pdfjsLib from ${JSON.stringify(pdfModuleUrl)};
       pdfjsLib.GlobalWorkerOptions.workerSrc = ${JSON.stringify(workerModuleUrl)};
-      window.__acaciaRenderPdf = async base64 => {
+      window.__acaciaRenderPdf = async (base64, renderScale) => {
         const binary = atob(base64);
         const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
         const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
         const pages = [];
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);
-          const viewport = page.getViewport({ scale: 1.5 });
+          const viewport = page.getViewport({ scale: renderScale });
           const canvas = document.createElement("canvas");
           canvas.width = Math.ceil(viewport.width);
           canvas.height = Math.ceil(viewport.height);
@@ -429,7 +531,9 @@ async function renderPdfPagesToImages(pdfPath, target) {
   try {
     await win.loadFile(tempHtml);
     await win.webContents.executeJavaScript("new Promise(resolve => { const wait = () => window.__acaciaRenderPdf ? resolve(true) : setTimeout(wait, 20); wait(); })");
-    const pageDataUrls = await win.webContents.executeJavaScript(`window.__acaciaRenderPdf(${JSON.stringify(pdfBytes)})`);
+    const pageDataUrls = await win.webContents.executeJavaScript(
+      `window.__acaciaRenderPdf(${JSON.stringify(pdfBytes)}, ${Number(scale) || 1.5})`
+    );
     const extension = target === "jpg" ? "jpg" : target;
     const pages = [];
     for (const dataUrl of pageDataUrls) {
@@ -440,20 +544,7 @@ async function renderPdfPagesToImages(pdfPath, target) {
       if (target === "webp") buffer = await image.webp({ quality: 92 }).toBuffer();
       if (target === "tiff") buffer = await image.tiff({ compression: "lzw" }).toBuffer();
       if (target === "bmp") {
-        const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
-        const channels = info.channels >= 4 ? 4 : 3;
-        const rowBytes = info.width * channels;
-        const header = Buffer.alloc(54);
-        header.write("BM", 0, 2, "ascii");
-        header.writeUInt32LE(54 + data.length, 2);
-        header.writeUInt32LE(54, 10);
-        header.writeUInt32LE(40, 14);
-        header.writeInt32LE(info.width, 18);
-        header.writeInt32LE(-info.height, 22);
-        header.writeUInt16LE(1, 26);
-        header.writeUInt16LE(channels === 4 ? 32 : 24, 28);
-        header.writeUInt32LE(data.length, 34);
-        buffer = Buffer.concat([header, data.subarray(0, rowBytes * info.height)]);
+        buffer = await encodeBmpFromImage(pngBuffer);
       }
       pages.push({
         buffer,
@@ -464,6 +555,67 @@ async function renderPdfPagesToImages(pdfPath, target) {
   } finally {
     win.destroy();
     await fsp.rm(tempHtml, { force: true }).catch(() => {});
+  }
+}
+
+async function writePdfAsDocx(pdfPath, outPath) {
+  const { Document, Packer, Paragraph, ImageRun, PageBreak } = docx;
+  const pages = await renderPdfPagesToImages(pdfPath, "png", 2);
+  if (!pages.length) throw new Error("没有渲染出可写入 Word 的页面。");
+
+  const children = [];
+  for (let index = 0; index < pages.length; index += 1) {
+    const metadata = await sharp(pages[index].buffer).metadata();
+    const width = metadata.width || 1;
+    const height = metadata.height || 1;
+    const fit = Math.min(560 / width, 740 / height);
+    children.push(new Paragraph({
+      children: [new ImageRun({
+        data: pages[index].buffer,
+        type: "png",
+        transformation: {
+          width: Math.max(1, Math.round(width * fit)),
+          height: Math.max(1, Math.round(height * fit))
+        }
+      })]
+    }));
+    if (index < pages.length - 1) children.push(new Paragraph({ children: [new PageBreak()] }));
+  }
+  const document = new Document({ sections: [{ children }] });
+  await fsp.writeFile(outPath, await Packer.toBuffer(document));
+}
+
+async function writePdfAsHtml(pdfPath, outPath) {
+  const pages = await renderPdfPagesToImages(pdfPath, "png", 1.5);
+  if (!pages.length) throw new Error("没有渲染出可写入网页的页面。");
+  const content = pages.map((page, index) => `<img alt="第 ${index + 1} 页" src="data:image/png;base64,${page.buffer.toString("base64")}">`).join("\n");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    body{margin:0;background:#edf0f5;padding:24px;font-family:"Microsoft YaHei",Arial,sans-serif}
+    img{display:block;width:min(100%,900px);height:auto;margin:0 auto 24px;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.16)}
+  </style></head><body>${content}</body></html>`;
+  await fsp.writeFile(outPath, html, "utf8");
+}
+
+async function writeVisualDocxFromSource(sourcePath, outPath) {
+  const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), "acacia-visual-docx-"));
+  const tempPdf = path.join(tempDir, "source.pdf");
+  try {
+    await writeSourcePdf(sourcePath, tempPdf);
+    await writePdfAsDocx(tempPdf, outPath);
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+async function writeVisualDocFromSource(sourcePath, outPath) {
+  const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), "acacia-visual-doc-"));
+  const tempDocx = path.join(tempDir, "source.docx");
+  try {
+    if (extname(sourcePath) === "pdf") await writePdfAsDocx(sourcePath, tempDocx);
+    else await writeVisualDocxFromSource(sourcePath, tempDocx);
+    await convertWithLibreOffice(tempDocx, outPath, "doc");
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -494,9 +646,10 @@ async function writeImagePages(pages, outPath, target) {
 }
 
 async function convertImage(sourcePath, outPath, target) {
+  const imageInput = extname(sourcePath) === "bmp" ? await readBmpAsPng(sourcePath) : sourcePath;
   if (target === "pdf") {
     const pdf = await PDFDocument.create();
-    const pngBuffer = await sharp(sourcePath).rotate().png().toBuffer();
+    const pngBuffer = await sharp(imageInput).rotate().png().toBuffer();
     const image = await pdf.embedPng(pngBuffer);
     const page = pdf.addPage([image.width, image.height]);
     page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
@@ -504,7 +657,7 @@ async function convertImage(sourcePath, outPath, target) {
     return;
   }
   const format = target === "jpg" ? "jpeg" : target;
-  let pipeline = sharp(sourcePath, { animated: target === "gif" }).rotate();
+  let pipeline = sharp(imageInput, { animated: target === "gif" }).rotate();
   if (format === "jpeg") pipeline = pipeline.jpeg({ quality: 92 });
   else if (format === "png") pipeline = pipeline.png();
   else if (format === "webp") pipeline = pipeline.webp({ quality: 92 });
@@ -512,23 +665,28 @@ async function convertImage(sourcePath, outPath, target) {
   else if (format === "avif") pipeline = pipeline.avif({ quality: 85 });
   else if (format === "tiff") pipeline = pipeline.tiff({ compression: "lzw" });
   else if (format === "bmp") {
-    const { data, info } = await pipeline.raw().toBuffer({ resolveWithObject: true });
-    const channels = info.channels >= 4 ? 4 : 3;
-    const rowBytes = info.width * channels;
-    const header = Buffer.alloc(54);
-    header.write("BM", 0, 2, "ascii");
-    header.writeUInt32LE(54 + data.length, 2);
-    header.writeUInt32LE(54, 10);
-    header.writeUInt32LE(40, 14);
-    header.writeInt32LE(info.width, 18);
-    header.writeInt32LE(-info.height, 22);
-    header.writeUInt16LE(1, 26);
-    header.writeUInt16LE(channels === 4 ? 32 : 24, 28);
-    header.writeUInt32LE(data.length, 34);
-    await fsp.writeFile(outPath, Buffer.concat([header, data.subarray(0, rowBytes * info.height)]));
+    await fsp.writeFile(outPath, await encodeBmpFromImage(imageInput));
     return;
   }
   await fsp.writeFile(outPath, await pipeline.toBuffer());
+}
+
+async function readBmpAsPng(sourcePath) {
+  const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), "acacia-bmp-input-"));
+  const pngPath = path.join(tempDir, "source.png");
+  try {
+    await run(ffmpegPath(), [
+      "-hide_banner",
+      "-loglevel", "error",
+      "-y",
+      "-i", sourcePath,
+      "-frames:v", "1",
+      pngPath
+    ]);
+    return await fsp.readFile(pngPath);
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 async function copyPdf(sourcePath, outPath) {
@@ -549,6 +707,14 @@ async function convertMedia(sourcePath, outPath, target) {
     args.push("-vf", "fps=12,scale='min(720,iw)':-2:flags=lanczos", "-loop", "0");
   } else if (target === "webm") {
     args.push("-codec:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-codec:a", "libopus");
+  } else if (target === "avi") {
+    args.push("-codec:v", "mpeg4", "-q:v", "4", "-codec:a", "libmp3lame", "-q:a", "3");
+  } else if (target === "m4v") {
+    args.push("-codec:v", "libx264", "-preset", "medium", "-crf", "23", "-codec:a", "aac", "-movflags", "+faststart");
+  } else if (target === "wmv") {
+    args.push("-codec:v", "wmv2", "-q:v", "3", "-codec:a", "wmav2", "-b:a", "192k");
+  } else if (target === "flv") {
+    args.push("-codec:v", "flv", "-q:v", "4", "-codec:a", "libmp3lame", "-q:a", "3");
   } else {
     args.push("-codec:v", "libx264", "-preset", "medium", "-crf", "23", "-codec:a", "aac", "-movflags", "+faststart");
   }
@@ -589,7 +755,7 @@ function isSupportedRoute(sourceExt, target) {
   if (category === "image") return imageTargets.has(target);
   if (category === "audio") return audioTargets.has(target);
   if (category === "video") return audioTargets.has(target) || videoTargets.has(target) || ["jpg", "png"].includes(target);
-  if (category === "pdf") return ["txt", "md", "html", "docx", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
+  if (category === "pdf") return ["txt", "md", "html", "doc", "docx", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
   if (category === "spreadsheet") return ["txt", "md", "html", "csv", "xlsx", "xls", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
   if (category === "document") return ["txt", "md", "html", "doc", "docx", "pdf", "rtf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
   if (category === "text") return [...textTargets, "docx", "doc", "xlsx", "xls", "pdf", "jpg", "png", "webp", "tiff", "bmp"].includes(target);
@@ -598,11 +764,11 @@ function isSupportedRoute(sourceExt, target) {
 
 function needsLibreOffice(sourceExt, target) {
   if (!officeInputs.has(sourceExt) || !officeTargets.has(target)) return false;
-  if (!nativelyReadableOfficeInputs.has(sourceExt)) return true;
-  return libreOfficeOnlyTargets.has(target);
+  if (sourceExt === target) return false;
+  return true;
 }
 
-async function convertFile({ sourcePath, target, outputDir, conflictMode = "rename" }) {
+async function convertFile({ sourcePath, target, outputDir, conflictMode = "rename", onlyText = false }) {
   if (!sourcePath || !fs.existsSync(sourcePath)) throw new Error("找不到源文件。");
   const sourceExt = extname(sourcePath);
   const normalizedTarget = String(target || "").toLowerCase();
@@ -633,16 +799,69 @@ async function convertFile({ sourcePath, target, outputDir, conflictMode = "rena
     return { outPath, characters: 0, skipped: false };
   }
 
+  if (!onlyText && category === "pdf" && normalizedTarget === "docx") {
+    await writePdfAsDocx(sourcePath, outPath);
+    return { outPath, characters: 0, skipped: false };
+  }
+
+  if (!onlyText && category === "pdf" && normalizedTarget === "doc") {
+    await writeVisualDocFromSource(sourcePath, outPath);
+    return { outPath, characters: 0, skipped: false };
+  }
+
+  if (!onlyText && category === "pdf" && normalizedTarget === "html") {
+    await writePdfAsHtml(sourcePath, outPath);
+    return { outPath, characters: 0, skipped: false };
+  }
+
   if (["jpg", "png", "webp", "tiff", "bmp"].includes(normalizedTarget) && ["pdf", "document", "spreadsheet", "text"].includes(category)) {
-    const outputSeed = path.join(folder, `${base}.${normalizedTarget}`);
+    const outputSeed = outPath;
     if (category === "pdf") {
       const pages = await renderPdfPagesToImages(sourcePath, normalizedTarget);
       const pagePaths = await writeImagePages(pages, outputSeed, normalizedTarget);
       return { outPath: pagePaths[0], outPaths: pagePaths, characters: 0, skipped: false };
     }
+    if (!onlyText && ["document", "spreadsheet", "text"].includes(category)) {
+      const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), "acacia-source-render-"));
+      const tempPdf = path.join(tempDir, "source.pdf");
+      try {
+        await writeSourcePdf(sourcePath, tempPdf);
+        const pages = await renderPdfPagesToImages(tempPdf, normalizedTarget);
+        const pagePaths = await writeImagePages(pages, outputSeed, normalizedTarget);
+        return { outPath: pagePaths[0], outPaths: pagePaths, characters: 0, skipped: false };
+      } finally {
+        await fsp.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      }
+    }
     const data = await extractSource(sourcePath);
     const pagePaths = await writeRenderedImages(data, outputSeed, normalizedTarget);
     return { outPath: pagePaths[0], outPaths: pagePaths, characters: sourceToText(data).length, skipped: false };
+  }
+
+  if (!onlyText && officeInputs.has(sourceExt) && officeTargets.has(normalizedTarget)) {
+    if (["spreadsheet", "text"].includes(category) && textTargets.has(normalizedTarget)) {
+      const data = await extractSource(sourcePath);
+      const bom = ["txt", "md", "csv"].includes(normalizedTarget) ? "\ufeff" : "";
+      await fsp.writeFile(outPath, bom + renderTextLike(data, normalizedTarget), "utf8");
+      return { outPath, characters: sourceToText(data).length, skipped: false };
+    }
+    if (["spreadsheet", "text"].includes(category) && ["xlsx", "xls"].includes(normalizedTarget)) {
+      const data = await extractSource(sourcePath);
+      writeXlsx(data, outPath, normalizedTarget);
+      return { outPath, characters: sourceToText(data).length, skipped: false };
+    }
+    if (sourceExt === normalizedTarget) {
+      await fsp.copyFile(sourcePath, outPath);
+    } else {
+      await convertWithLibreOffice(sourcePath, outPath, normalizedTarget);
+    }
+    return { outPath, characters: 0, skipped: false };
+  }
+
+  if (!onlyText && ["text"].includes(category) && ["docx", "doc"].includes(normalizedTarget)) {
+    if (normalizedTarget === "docx") await writeVisualDocxFromSource(sourcePath, outPath);
+    else await writeVisualDocFromSource(sourcePath, outPath);
+    return { outPath, characters: 0, skipped: false };
   }
 
   if (needsLibreOffice(sourceExt, normalizedTarget)) {
